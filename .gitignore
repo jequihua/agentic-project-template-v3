@@ -1,0 +1,66 @@
+# === Local state ===
+local_state/
+.local/
+
+# === Python caches and build ===
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# === Test / coverage output ===
+.coverage
+coverage.xml
+htmlcov/
+test-results/
+test-results.xml
+
+# === Virtual environments and dependencies ===
+.venv/
+.venv*/
+venv/
+env/
+node_modules/
+
+# === Local env and secrets ===
+.env
+.env.*
+*.pem
+*.key
+*.secret
+*.token
+credentials*
+secrets*
+*credentials*.json
+service-account*.json
+
+# === Local memory roots ===
+llloom_memory/
+memory_root/
+
+# === Logs, temp, and bulky generated work ===
+*.log
+tmp/
+temp/
+generated/
+# Exception: track ONLY the single navigation read model (disposable,
+# byte-reproducible from 08_pkg/okf_navigation_manifest.json). Everything else under
+# 08_pkg/generated/ — including atomic-write .okfnav-*.tmp residue — stays ignored.
+!/08_pkg/generated/
+/08_pkg/generated/*
+!/08_pkg/generated/okf_navigation.md
+*_work/
+*_graphab_work/
+
+# === Notebook checkpoints ===
+.ipynb_checkpoints/
+
+# === OS / editor noise ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

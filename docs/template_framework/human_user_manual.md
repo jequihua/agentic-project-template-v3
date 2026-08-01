@@ -790,6 +790,38 @@ Manual mode is best when:
 - frutlups is not installed;
 - the loop needs flexible discussion.
 
+### Optional Roadmap Uncertainty And Project Exclusions
+
+Two optional roadmap headings keep long-lived planning honest. Both are
+manual-first and neither is required.
+
+Give each concern exactly one destination:
+
+- the next reviewable transition is already clear -> write a normal slice;
+- a precise dependency is owned outside the slice (an external answer, an
+  authority, a credential, a cost decision) -> keep it as a question or block,
+  and it stays sharp;
+- the concern is plausibly in scope but cannot yet be framed honestly as a
+  slice -> add an optional `## Not Yet Specified` bullet;
+- the work is deliberately outside the project destination -> add an optional
+  `## Ruled Out` bullet with its reason, date, and evidence or authority.
+
+Entries are ordinary Markdown bullets. Neither list feeds execution
+automatically, and neither is a slice.
+
+Reconsider both lists at an accepted slice boundary or during a deliberate
+planning pass, not on every action. At that point a `Not Yet Specified` entry
+may stay, sharpen into a slice, split, merge, or disappear with a brief reviewed
+explanation.
+
+Human approval is required when a new exclusion would narrow the project
+destination, and when ruled-out work is resurrected. An architect may record an
+exclusion the brief or an accepted owner decision already established, and the
+reviewer checks that citation.
+
+Full definitions, the admission decision, and an example live in
+`docs/template_framework/method.md`.
+
 ### Optional Fresh Contexts At Durable Handoffs
 
 Refreshing an agent context is an optional, controller/human-owned orchestration
@@ -848,7 +880,9 @@ review happened.
 
 `Frutlups mode: automated driver`
 
-This is a future boundary, not built into the scaffold. A thin local runner may:
+This is a future, specification-only interface. No runner ships with this
+template, and the typed outcomes below are not implemented here, in frutlups, or
+in any runner today. A thin local runner may:
 
 - consume `frutlups status --json`;
 - route prompt files to configured agents;
@@ -858,17 +892,30 @@ This is a future boundary, not built into the scaffold. A thin local runner may:
 - stop on gates;
 - report commit-ready or pull-request-ready.
 
-The runner must stop on:
+When that runner exists it should act on typed planning outcomes:
 
-- blocked verdict;
-- override required;
-- invalid self-report;
-- invalid review report;
-- no frontier;
-- memory gate failure;
-- environment gate failure.
+- `ready`: continue the declared loop;
+- `needs_specification`: run one bounded architect planning turn, then recompute
+  durable state;
+- `blocked`: stop and report the cited block and its owner;
+- `complete`: succeed only when explicit accepted completion evidence exists;
+- `invalid` or an unknown outcome: stop fail-closed with diagnostics.
 
-The runner must not commit or open pull requests by default.
+Also true of that future runner:
+
+- an empty frontier and retry exhaustion never imply completion;
+- it consumes versioned frutlups state instead of parsing roadmap prose;
+- it must not graduate `Not Yet Specified` entries, choose `Ruled Out` entries,
+  or decide project scope;
+- human approval gates remain intact; and
+- it must not commit or open pull requests by default.
+
+The runner must also stop on a blocked verdict, a required override, an invalid
+self-report, an invalid review report, a memory gate failure, or an environment
+gate failure.
+
+The normative future boundary is
+`docs/template_framework/frutlups_driver_boundary.md`.
 
 ## 14. llloom Memory
 

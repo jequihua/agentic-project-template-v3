@@ -84,6 +84,32 @@ class OperatingCardTests(unittest.TestCase):
                         "execution semantics"):
             self.assertIn(trigger, low)
 
+    def test_normal_loop_names_exclusion_check_and_fog_reconsideration(self):
+        """M013: the routine loop tells the architect to check accepted
+        project-level exclusions before slicing and to reconsider only the
+        `Not Yet Specified` concerns new evidence has clarified, at accepted
+        boundaries. The card links the method instead of restating its contract;
+        its budget stays guarded by test_line_and_word_limits."""
+        loop = _section(self.text, "## Normal loop")
+        self.assertTrue(loop.strip(), "card has no normal-loop section")
+        for label, anchor in (
+            ("exclusion register", "`Ruled Out`"),
+            ("checked before slicing", "before slicing"),
+            ("fog register", "`Not Yet Specified`"),
+            ("accepted boundaries", "at accepted boundaries"),
+            ("evidence-clarified only", "new evidence has clarified"),
+            ("links the method", "docs/template_framework/method.md"),
+        ):
+            with self.subTest(loop=label):
+                self.assertIn(anchor, loop, f"normal loop omits: {label}")
+        # Progressive disclosure: the detailed doctrine stays in the method.
+        low = self.text.lower()
+        for copied in ("admission", "level 4", "resurrect", "needs_specification",
+                       "empty frontier", "terminal register"):
+            self.assertNotIn(
+                copied, low, f"the card must not restate the method contract: {copied}"
+            )
+
     def test_no_volatile_state_or_copied_profile_tables(self):
         low = self.text.lower()
         for reason in ("okf_yaml_invalid", "profile_yaml_out_of_subset",

@@ -43,6 +43,63 @@ one accepted change into every routing file.
 `05_governance/review_log.md` remains only as a pointer-only compatibility
 artifact and takes no routine review rows.
 
+## Roadmap Uncertainty And Project Exclusions
+
+Long-lived planning needs two words the loop above does not supply. Two optional
+level-2 roadmap headings supply them: `## Not Yet Specified` for work inside the
+destination that is not yet sharp, and `## Ruled Out` for work deliberately kept
+outside it. Both registers are optional and manual-first — a project that uses
+neither is fully valid — and neither adds a workspace, artifact type, dependency,
+required `PROJECT_STATE.md` field, or tool.
+
+Admit each concern exactly once:
+
+- sharp and actionable: write a narrow slice;
+- sharp but blocked on external evidence, ownership, or authority: record a
+  question or block (`05_governance/current/question_policy.md`) — the work
+  stays sharp, and a known blocker is never hidden as fog;
+- in scope but not yet sharp enough to state a reviewable question or artifact
+  transition: record a `Not Yet Specified` entry;
+- outside the accepted destination: record a `Ruled Out` entry, subject to the
+  authority rule below.
+
+`Ruled Out` is a project-level terminal register. A prompt's `Non-Goals` are
+slice-local fences that expire with their slice and may become valid work later;
+they are never promoted into `Ruled Out` automatically.
+
+Entries in both registers are ordinary top-level Markdown bullets. Neither
+register is an executable slice, and neither enters the frontier.
+
+Reconsider entries at an accepted slice or pass boundary, or during an explicit
+architect planning pass — not on every loop action. At such a boundary a
+`Not Yet Specified` entry may be left unchanged, sharpened into a proposed slice,
+split, merged, or removed with a brief reviewed explanation.
+
+The architect may record an exclusion that the accepted brief or an accepted
+owner decision already establishes, and the reviewer checks that citation. A
+proposed entry that would narrow or redraw the destination needs human approval
+before it becomes an accepted exclusion. Removing or resurrecting an accepted
+`Ruled Out` entry is always a Level 4, human-aware scope change.
+
+An empty frontier is not completion evidence. Zero ready slices — with zero
+`Not Yet Specified` entries beside them — never establish completion; only
+explicit accepted closure evidence does.
+
+Use either section only when it carries information:
+
+```markdown
+## Not Yet Specified
+
+- Packaging hardening after the first consumer run — revisit when the run report
+  shows which install and upgrade paths actually fail.
+
+## Ruled Out
+
+- Hosted multi-tenant control plane — excluded because the accepted brief
+  requires a local-only tool; 2026-08-01; evidence:
+  `00_brief/problem_statement.md`.
+```
+
 ## Lightweight Context
 
 `CONTEXT.md` files orient agents to folders. They are not the live project state.

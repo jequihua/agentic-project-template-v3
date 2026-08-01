@@ -21,3 +21,12 @@ Use questions for:
 - credential or cost decisions;
 - architecture choices outside the active scope.
 
+Not every unknown is a question:
+- a precise question whose evidence or ownership is external belongs in
+  `questions/open/`;
+- an in-scope concern that cannot yet be stated precisely belongs in the
+  optional roadmap `Not Yet Specified` register
+  (`docs/template_framework/method.md`);
+- sharp work blocked on an open question stays sharp and blocked; do not hide it
+  as `Not Yet Specified`.
+

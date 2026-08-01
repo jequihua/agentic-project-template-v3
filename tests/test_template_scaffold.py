@@ -562,6 +562,294 @@ class TemplateScaffoldTests(unittest.TestCase):
         text = path.read_text(encoding="utf-8").lower()
         self.assertIn("no runner is implemented", text)
 
+    @staticmethod
+    def _section_outside_fences(text: str, heading: str) -> str:
+        """Body of a Markdown section, up to the next same-or-higher heading.
+
+        Headings inside fenced examples are skipped, so a doc may show the
+        literal roadmap headings it defines without truncating its own section.
+        """
+        level = len(heading) - len(heading.lstrip("#"))
+        out, capturing, fenced = [], False, False
+        for line in text.splitlines():
+            if line.startswith("```"):
+                fenced = not fenced
+            elif not fenced and line.strip() == heading:
+                capturing = True
+                continue
+            elif capturing and not fenced and line.startswith("#"):
+                if len(line) - len(line.lstrip("#")) <= level:
+                    break
+            if capturing:
+                out.append(line)
+        return "\n".join(out)
+
+    @staticmethod
+    def _bullets(section: str) -> list[str]:
+        """Top-level ``- `` bullets, each joined with its continuation lines."""
+        bullets: list[str] = []
+        for line in section.splitlines():
+            if line.startswith("- "):
+                bullets.append(line[2:].strip())
+            elif bullets and line.startswith("  ") and line.strip():
+                bullets[-1] += " " + line.strip()
+        return bullets
+
+    def test_roadmap_uncertainty_and_exclusion_semantics(self) -> None:
+        """M013: the two optional roadmap registers keep their load-bearing
+        meaning, lifecycle, and authority across the method, the question
+        policy, and the specification-only driver boundary.
+
+        Anchored on the distinctions and control-flow words that decide
+        behavior, not on whole paragraphs, so ordinary rewording stays free.
+        The template ships no parser or runner, so nothing here claims
+        downstream behavior this repository cannot execute.
+        """
+        framework = ROOT / "docs" / "template_framework"
+        method = (framework / "method.md").read_text(encoding="utf-8")
+        boundary = (framework / "frutlups_driver_boundary.md").read_text(
+            encoding="utf-8"
+        )
+        policy = (
+            ROOT / "05_governance" / "current" / "question_policy.md"
+        ).read_text(encoding="utf-8")
+
+        doctrine = self._section_outside_fences(
+            method, "## Roadmap Uncertainty And Project Exclusions"
+        )
+        self.assertTrue(doctrine.strip(), "method.md has no roadmap-uncertainty section")
+
+        # The four-way admission decision, the four distinct lanes, optional and
+        # manual-first operation, the lifecycle cadence, and human authority.
+        for label, anchor in (
+            ("exact fog heading", "`## Not Yet Specified`"),
+            ("exact exclusion heading", "`## Ruled Out`"),
+            ("sharp work becomes a slice", "sharp and actionable: write a narrow slice"),
+            ("blocked work stays sharp", "a known blocker is never hidden as fog"),
+            ("dim in-scope work becomes fog", "record a `Not Yet Specified` entry"),
+            ("outside work becomes an exclusion", "record a `Ruled Out` entry"),
+            ("exclusion is project-level", "project-level terminal register"),
+            ("non-goals stay slice-local", "slice-local fences that expire"),
+            ("no automatic promotion", "never promoted into `Ruled Out` automatically"),
+            ("optional and manual-first", "optional and manual-first"),
+            ("no new machinery", "neither adds a workspace, artifact type, dependency,"),
+            ("ordinary bullets", "ordinary top-level Markdown bullets"),
+            ("neither is executable work",
+             "is an executable slice, and neither enters the frontier"),
+            ("bounded reconsideration cadence",
+             "at an accepted slice or pass boundary"),
+            ("not every loop action", "not on every loop action"),
+            ("human approval to narrow scope", "needs human approval"),
+            ("level 4 removal or resurrection", "Level 4, human-aware scope change"),
+            ("empty frontier is not completion",
+             "An empty frontier is not completion evidence"),
+            ("only accepted closure completes",
+             "explicit accepted closure evidence does"),
+        ):
+            with self.subTest(method=label):
+                self.assertIn(anchor, doctrine, f"method doctrine lost: {label}")
+
+        # The question lane routes a precise externally owned question separately
+        # from a dim in-scope concern, and never absorbs sharp blocked work.
+        for label, anchor in (
+            ("precise external question", "`questions/open/`"),
+            ("dim in-scope concern", "`Not Yet Specified`"),
+            ("blocked work stays sharp", "stays sharp and blocked"),
+        ):
+            with self.subTest(question_policy=label):
+                self.assertIn(anchor, policy, f"question policy lost: {label}")
+
+        # The driver boundary stays specification-only: no schema, no JSON
+        # object, no parser — only the typed outcomes and their behavior.
+        low = boundary.lower()
+        self.assertIn("no runner is implemented", low)
+        for forbidden in ("contract_version", "```json", "next_actor", "reason_code"):
+            self.assertNotIn(
+                forbidden, low, f"driver boundary must stay spec-only: {forbidden}"
+            )
+
+        outcomes = self._section_outside_fences(boundary, "## Planning-Frontier Outcomes")
+        self.assertTrue(outcomes.strip(), "driver boundary has no typed-outcome section")
+        mapped = {
+            bullet.split("`")[1]: bullet
+            for bullet in self._bullets(outcomes)
+            if bullet.startswith("`")
+        }
+        for state, behavior in (
+            ("ready", "continue the normal declared loop"),
+            ("needs_specification", "dispatch one bounded architect planning turn"),
+            ("blocked", "stop and report the cited block"),
+            ("complete", "stop successfully only with explicit accepted completion"),
+            ("invalid", "stop fail-closed with diagnostics"),
+        ):
+            with self.subTest(outcome=state):
+                self.assertIn(state, mapped, f"driver boundary omits `{state}`")
+                self.assertIn(
+                    behavior, mapped[state],
+                    f"`{state}` is not bound to its required runner behavior",
+                )
+
+        # Nothing may be documented as a successful completion by default:
+        # not an empty frontier, not an unsupported version, not retry exhaustion.
+        for label, anchor in (
+            ("empty frontier", "the absence of a ready slice never proves completion"),
+            ("unsupported version",
+             "refuses any contract version it does not implement"),
+            ("no roadmap interpretation", "does not parse roadmap prose"),
+            ("typed actor only", "only when the typed state names that actor"),
+            ("retry exhaustion", "no durable progress is a stopped run, never"),
+            ("existing gates intact", "all existing human gates"),
+        ):
+            with self.subTest(driver_boundary=label):
+                self.assertIn(anchor, outcomes, f"driver boundary lost: {label}")
+        self.assertIn(
+            "an `invalid` or unknown planning-frontier state",
+            boundary,
+            "the generic 'no frontier' stop rule must be typed",
+        )
+
+        # No new required PROJECT_STATE.md field, workspace, mode, OKF type, or
+        # dependency: the registers stay ordinary optional roadmap Markdown.
+        for label, text in (
+            ("project-state contract",
+             (framework / "project_state_contract.md").read_text(encoding="utf-8")),
+            ("frutlups modes",
+             (framework / "frutlups_modes.md").read_text(encoding="utf-8")),
+            ("okf profile",
+             (ROOT / "08_pkg" / "okf_profile_v0_1.md").read_text(encoding="utf-8")),
+        ):
+            with self.subTest(unchanged_contract=label):
+                for register in ("Not Yet Specified", "Ruled Out"):
+                    self.assertNotIn(
+                        register, text,
+                        f"{label} must not turn '{register}' into a contract value",
+                    )
+        deps = (
+            (ROOT / "pyproject.toml")
+            .read_text(encoding="utf-8")
+            .split("dependencies = [", 1)[1]
+            .split("]", 1)[0]
+        )
+        self.assertEqual(
+            [line.strip().strip('",') for line in deps.strip().splitlines()],
+            ["PyYAML>=6.0.3,<7"],
+            "the roadmap registers must not add a dependency",
+        )
+
+    def test_operator_guidance_for_optional_roadmap_registers(self) -> None:
+        """M014: the shipped README and human manual make the optional roadmap
+        registers discoverable and safe to use, and the automated-driver guidance
+        stays contract-accurate rather than promising a generic stop rule.
+
+        Bounded section extraction is used wherever the same phrase appears
+        elsewhere in a long document, and only semantic anchors are asserted, so
+        the guard survives ordinary rewording of the surrounding prose.
+        """
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        manual = (
+            ROOT / "docs" / "template_framework" / "human_user_manual.md"
+        ).read_text(encoding="utf-8")
+
+        # The README entry point names both exact registers, their correct use,
+        # human authority, and the canonical contract; and it warns autonomous
+        # operators that an empty frontier is not completion evidence.
+        entry = self._section_outside_fences(readme, "## Optional Roadmap Registers")
+        self.assertTrue(entry.strip(), "README has no optional-roadmap-register section")
+        for label, anchor in (
+            ("exact fog heading", "`## Not Yet Specified`"),
+            ("exact exclusion heading", "`## Ruled Out`"),
+            ("fog is in scope but not sharp", "not yet sharp"),
+            ("exclusion is project-level", "project-level exclusion"),
+            ("not a slice-local non-goal", "slice-local `Non-Goals`"),
+            ("neither is required", "Neither is required"),
+            ("neither is executable work", "part of the ready frontier"),
+            ("blocked work stays in the question lane", "question/block lane"),
+            ("human approval for scope change", "needs human approval"),
+            ("canonical method link", "docs/template_framework/method.md"),
+            ("empty frontier is not completion",
+             "An empty frontier is never proof of completion"),
+            ("only accepted evidence completes",
+             "explicit accepted completion evidence"),
+            ("driver boundary link",
+             "docs/template_framework/frutlups_driver_boundary.md"),
+            ("no runner is shipped", "runner ships with this template"),
+        ):
+            with self.subTest(readme=label):
+                self.assertIn(anchor, entry, f"README guidance lost: {label}")
+
+        # The manual keeps all four destinations distinct, refuses automatic
+        # execution, bounds reconsideration, and preserves human scope authority.
+        guidance = self._section_outside_fences(
+            manual, "### Optional Roadmap Uncertainty And Project Exclusions"
+        )
+        self.assertTrue(guidance.strip(), "manual has no optional-roadmap subsection")
+        for label, anchor in (
+            ("slice destination", "write a normal slice"),
+            ("question/block destination", "keep it as a question or block"),
+            ("blocked work stays sharp", "it stays sharp"),
+            ("fog destination", "`## Not Yet Specified` bullet"),
+            ("exclusion destination", "`## Ruled Out` bullet"),
+            ("optional, not required", "neither is required"),
+            ("no automatic execution", "Neither list feeds execution"),
+            ("bounded reconsideration", "not on every action"),
+            ("human approval to narrow", "narrow the project"),
+            ("human approval to resurrect", "ruled-out work is resurrected"),
+            ("canonical method link", "docs/template_framework/method.md"),
+        ):
+            with self.subTest(manual=label):
+                self.assertIn(anchor, guidance, f"manual guidance lost: {label}")
+
+        # The automated-driver section is future/specification-only, binds the
+        # five accepted outcomes to the right behavior, and no longer offers a
+        # generic "no frontier" as a sufficient stop or completion contract.
+        driver = self._section_outside_fences(manual, "### Automated Driver Mode")
+        self.assertTrue(driver.strip(), "manual has no automated-driver section")
+        self.assertNotIn(
+            "no frontier", driver.lower(),
+            "the generic no-frontier stop rule must be replaced by typed outcomes",
+        )
+        for state, behavior in (
+            ("ready", "continue the declared loop"),
+            ("needs_specification", "run one bounded architect planning turn"),
+            ("blocked", "stop and report the cited block"),
+            ("complete", "succeed only when explicit accepted completion evidence"),
+            ("invalid", "stop fail-closed with diagnostics"),
+        ):
+            with self.subTest(outcome=state):
+                bullet = next(
+                    (b for b in self._bullets(driver) if b.startswith(f"`{state}`")), None
+                )
+                self.assertIsNotNone(bullet, f"manual omits the `{state}` outcome")
+                self.assertIn(
+                    behavior, bullet,
+                    f"`{state}` is not bound to its accepted operator behavior",
+                )
+        for label, anchor in (
+            ("specification-only", "future, specification-only interface"),
+            ("not implemented anywhere",
+             "not implemented here, in frutlups, or"),
+            ("empty frontier and retries", "never imply completion"),
+            ("versioned state, not prose", "instead of parsing roadmap prose"),
+            ("no fog graduation", "must not graduate `Not Yet Specified`"),
+            ("no scope decision", "or decide project scope"),
+            ("human gates intact", "human approval gates remain intact"),
+            ("no commit or PR by default",
+             "must not commit or open pull requests by default"),
+            ("normative boundary link",
+             "docs/template_framework/frutlups_driver_boundary.md"),
+        ):
+            with self.subTest(driver=label):
+                self.assertIn(anchor, driver, f"automated-driver guidance lost: {label}")
+
+        # The new guidance stays advisory: both surfaces state optionality, and
+        # the future-only section ships no command for behavior that does not
+        # exist.
+        self.assertIn("Neither is required", entry)
+        self.assertIn("neither is required", guidance)
+        self.assertNotIn(
+            "```", driver, "the future-only driver section must not ship commands"
+        )
+
     def test_no_scaffold_test_requires_frutlups(self) -> None:
         """The suite must run without frutlups installed (downstream-safe)."""
         self._assert_no_test_imports("frutlups")

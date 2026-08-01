@@ -33,9 +33,38 @@ The runner MUST stop cleanly on:
 - `override` required;
 - invalid self-report;
 - invalid review report;
-- no frontier;
+- an `invalid` or unknown planning-frontier state (below);
 - memory gate failure;
 - environment gate failure.
+
+## Planning-Frontier Outcomes
+
+This template implements no parser, schema, state machine, or runner for what
+follows; it records only the boundary a future frutlups contract and a future
+runner must honor. The runner consumes versioned frutlups planning state and
+refuses any contract version it does not implement.
+
+Each typed outcome binds to exactly one runner behavior:
+
+- `ready`: continue the normal declared loop;
+- `needs_specification`: dispatch one bounded architect planning turn, then
+  recompute durable state;
+- `blocked`: stop and report the cited block and its owner;
+- `complete`: stop successfully only with explicit accepted completion evidence;
+- `invalid` or unknown: stop fail-closed with diagnostics.
+
+The runner MUST also observe:
+
+- the absence of a ready slice never proves completion; neither zero slices, nor
+  zero slices together with zero `Not Yet Specified` entries, is completion
+  evidence;
+- it does not parse roadmap prose, graduate `Not Yet Specified` entries, edit
+  roadmaps, choose exclusions, or decide completion;
+- it may dispatch an architect only when the typed state names that actor;
+- retry exhaustion or a turn with no durable progress is a stopped run, never
+  completion;
+- all existing human gates, commit/PR restrictions, durable resumption, and
+  thin-runner boundaries remain intact.
 
 The runner stays thin on purpose: frutlups owns durable state, validation, gates,
 deterministic prompts, and resumability. The runner only coordinates sinks and

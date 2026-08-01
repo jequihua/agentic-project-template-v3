@@ -40,6 +40,32 @@ Human owner starting from scratch? See
   `docs/template_framework/project_profiles.md`. The default is the `base`
   profile; optional workspaces are activated explicitly, not automatically.
 
+## Optional Roadmap Registers
+
+Two optional roadmap headings help long-lived planning. Neither is required,
+executable, or part of the ready frontier, and a project that uses neither works
+exactly as before.
+
+- `## Not Yet Specified` — a plausibly in-scope concern that is not yet sharp
+  enough to become a reviewable slice. It is not a promise, a slice, or a
+  blocker.
+- `## Ruled Out` — an accepted project-level exclusion, recorded with its reason,
+  date, and evidence. This is not a slice-local `Non-Goals` entry; those expire
+  with their prompt.
+
+A precise question or dependency owned outside the slice stays sharp in the
+existing question/block lane — do not park it in `Not Yet Specified`. A new
+exclusion that would narrow the project destination, and any resurrection of
+ruled-out work, needs human approval.
+
+Canonical contract: `docs/template_framework/method.md`.
+
+Running autonomously? An empty frontier is never proof of completion: no ready
+slice, with or without `Not Yet Specified` entries, does not mean the project is
+done. Only explicit accepted completion evidence does. The future runtime
+boundary is `docs/template_framework/frutlups_driver_boundary.md`.
+No runner ships with this template.
+
 ## Initial Status
 
 The repository starts as a blank project scaffold. Run the framework

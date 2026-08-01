@@ -13,12 +13,13 @@ none of it.
 
 1. Read `PROJECT_STATE.md`.
 2. Name one artifact transition.
-3. Write one narrow prompt: exact paths, task, non-goals, verification, definition of done.
-4. Leave artifacts legacy unless exact new paths are explicitly profiled.
-5. For a profiled artifact: choose a type, use the two-field minimum, justify any extra field, run the profile checker.
-6. Review body correctness separately from profile conformance.
-7. Record one verdict and one next move.
-8. After a positive milestone verdict, run milestone commit closure and commit accepted files.
+3. Check accepted project-level `Ruled Out` entries before slicing; at accepted boundaries reconsider only `Not Yet Specified` concerns new evidence has clarified (`docs/template_framework/method.md`).
+4. Write one narrow prompt: exact paths, task, non-goals, verification, definition of done.
+5. Leave artifacts legacy unless exact new paths are explicitly profiled.
+6. For a profiled artifact: choose a type, use the two-field minimum, justify any extra field, run the profile checker.
+7. Review body correctness separately from profile conformance.
+8. Record one verdict and one next move.
+9. After a positive milestone verdict, run milestone commit closure and commit accepted files.
 
 ## Four OKF rules
 

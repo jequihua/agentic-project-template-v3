@@ -32,6 +32,10 @@ strictness levels, review protocol, authoring/migration guide, and profile contr
 Open those deeper sources on escalation, not by default; you do not need to read the full
 OKF profile for ordinary work.
 
+When acting as reviewer, use
+`docs/template_framework/reviewer_operating_card.md` as the matching routine
+surface for running one review.
+
 If the project uses llloom or frutlups, use their separate initialization
 prompts only after the human owner chooses that option.
 

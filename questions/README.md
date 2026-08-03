@@ -15,3 +15,6 @@ Each question should include:
 - status;
 - links to later answer or decision.
 
+Use `questions/template_question.md` as the starting shape and record each
+question in `questions/INDEX.md`.
+

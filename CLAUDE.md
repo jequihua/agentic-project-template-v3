@@ -68,6 +68,10 @@ automatically. See `docs/template_framework/project_profiles.md`.
   index instead of copying them into durable analysis and reference artifacts.
 - Before semantic review, run the artifact-integrity preflight on the exact
   artifacts in the slice when they cite repository paths or test identifiers.
+- Review findings carry a P0-P3 disposition; only unresolved P0-P2 block a
+  pass. The third same-invariant recurrence in a slice stops the corrective
+  loop and routes to architect reassessment
+  (`docs/template_framework/closure_convergence.md`).
 - Do not treat llloom or frutlups as required unless `PROJECT_STATE.md` enables
   them.
 - Do not commit secrets, credentials, raw private data, local venvs, caches, or
@@ -113,6 +117,9 @@ Never trade away:
   accessibility, explicit human requirements, or needed tests.
 
 ## Roles
+
+The full loop — who writes what, where it lands, which index row it touches —
+is one table: `docs/template_framework/method.md`, The Loop On One Page.
 
 - Human owner: final stop/go, priorities, external authority.
 - Architect/reviewer: roadmap, coding prompts, review prompts or final review

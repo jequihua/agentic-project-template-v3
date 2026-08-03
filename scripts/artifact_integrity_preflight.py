@@ -36,6 +36,7 @@ HISTORICAL_WORDS = (
     "nonexistent",
     "removed",
     "replaced",
+    "deleted",
     "old value",
     "no longer",
     "prior finding",

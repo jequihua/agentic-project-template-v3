@@ -21,6 +21,19 @@ Prompts should make the next action safer without becoming a mini manual.
   read-only `scripts/artifact_integrity_preflight.py` check before semantic
   review.
 
+## Size Budgets
+
+Budgets are guidance, not gates, but respect them:
+
+- a coding prompt aims for one page; if it cannot fit, the slice is too big;
+- a review report leads with at most ten findings — more is a finding against
+  the prompt's scope, not a reason for more review text;
+- a self-report aims for one page plus verification evidence.
+
+Active review input is bounded by the evidence window in
+`docs/template_framework/closure_convergence.md`; link history instead of
+re-reading it.
+
 ## Recommended Coding Prompt Shape
 
 1. Role and workflow mode.

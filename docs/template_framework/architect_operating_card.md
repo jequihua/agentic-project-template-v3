@@ -49,6 +49,17 @@ Package-owned types — `source`, `claim`, `entity`, `page` (llloom) and `milest
 package is active. This aid is checked against the accepted registry, not a second
 authority: a newly accepted template-owned type must be added here or a test fails.
 
+## Convergence rules
+
+- Findings carry P0-P3 and a plane word; blocking findings name their violated
+  invariant (`05_governance/current/review_protocol.md`).
+- At the third same-invariant recurrence, stop corrections; simplify the proof or
+  narrow the claim before any new prompt. Corrections that keep enlarging the
+  assurance harness are that recurrence
+  (`docs/template_framework/closure_convergence.md`).
+- Candidate bytes never own review/acceptance status
+  (`docs/template_framework/candidate_review_acceptance.md`).
+
 ## Escalate instead of improvising when the work changes
 
 - existing history or migration;

@@ -26,7 +26,9 @@ Requires:
 - focused prompt;
 - focused self-report;
 - focused review;
-- update only affected artifacts.
+- update only affected artifacts;
+- on corrective round 2 or later, a Correction Scope Map in the prompt
+  (`docs/template_framework/closure_convergence.md`).
 
 ## Level 3 - Normal Pass
 

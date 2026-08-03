@@ -404,9 +404,12 @@ class TemplateScaffoldTests(unittest.TestCase):
         self.assertIn("prompts/templates/self_report.md", coding_prompt_text)
 
     def test_minimal_implementation_discipline_semantics(self) -> None:
-        """M011: the YAGNI/complexity-accretion discipline keeps its load-bearing
-        meaning across the canonical policy and its concise enforcement surfaces,
-        guarded by a small table of anchors rather than a full-paragraph freeze."""
+        """M011, harmonized 2026-08-03 by owner decision: `CLAUDE.md` Minimal
+        Implementation Discipline is the single canonical YAGNI copy. The
+        coding template carries only a pointer plus a compressed summary (no
+        full paraphrase, which had drifted), and the review template keeps its
+        reviewer-specific accretion checks. Anchors guard load-bearing meaning
+        rather than freezing paragraphs."""
         def read(rel: str) -> str:
             return (ROOT / rel).read_text(encoding="utf-8")
 
@@ -434,9 +437,8 @@ class TemplateScaffoldTests(unittest.TestCase):
             )),
             "coding-template": (coding, (
                 "CLAUDE.md` Minimal Implementation Discipline",
-                "not mechanically the smallest diff",
-                "repeated concrete duplication or a shared invariant",
-                "justified only when the smallest shared helper reduces",
+                "not restated here",
+                "mechanically the smallest diff",
                 "prefer table-driven tests or",
                 "assert exact contract values individually",
             )),

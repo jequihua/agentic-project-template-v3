@@ -172,7 +172,9 @@ class AuthoringPolicyTests(unittest.TestCase):
         for heading in ("Intent", "Files Changed", "Verification Run",
                         "Definition Of Done Audit", "Recommended Next Move"):
             self.assertIn(heading, fields)
-        self.assertEqual(len(fields), 11)  # no new schema field was introduced
+        # 12 = the 11 fields shipped with the OKF slice plus 'Deviations From
+        # Prompt', added 2026-08-03 by an owner-approved convergence slice.
+        self.assertEqual(len(fields), 12)
         init = (ROOT / "initialization" / "002_coder_framework_initialization.md").read_text(encoding="utf-8")
         for field in fields:
             self.assertIn(f"{field}:", init)

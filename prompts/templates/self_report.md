@@ -32,6 +32,12 @@ Definition Of Done Audit:
 
 Non-Goals Confirmed:
 
+Deviations From Prompt:
+
+State anything done differently from the prompt, and any prompt item not
+done, with the reason. Write "none" when the implementation matches the
+prompt exactly.
+
 Memory Used:
 
 Memory Update Requested:
@@ -41,6 +47,10 @@ Known Limits / Follow-Up:
 When touched code shows material out-of-scope complexity accretion, name one
 evidence-backed simplification candidate and treat it explicitly as unapproved
 follow-up, not authorized work.
+
+On a corrective pass, also name here the claims withdrawn or narrowed and the
+validation evidence invalidated and recollected, matching the corrective
+prompt's Correction Scope Map.
 
 Recommended Next Move:
 

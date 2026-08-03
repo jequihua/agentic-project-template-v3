@@ -34,15 +34,11 @@ TBD
 
 ## Implementation Discipline
 
-Follow YAGNI as defined in `CLAUDE.md` Minimal Implementation Discipline, the
-canonical doctrine. Prefer reuse, stdlib/native features, and the smallest
-correct useful change, not mechanically the smallest diff. Use a one-liner or
-small local change when it fully solves the task, and avoid speculative
-abstractions, new dependencies, or scaffolding for later. Extraction supported by
-repeated concrete duplication or a shared invariant that must change together is
-not speculative, but is justified only when the smallest shared helper reduces
-total complexity and preserves local clarity. Do not trade away correctness,
-security, or needed tests for brevity.
+Follow `CLAUDE.md` Minimal Implementation Discipline — the canonical doctrine,
+not restated here. In short: the smallest correct useful change (YAGNI), not
+mechanically the smallest diff; reuse and stdlib/native features before new
+code or dependencies; no speculative abstractions or scaffolding for later;
+and never trade away the protections that doctrine lists.
 
 ## OKF Authoring
 
@@ -56,6 +52,27 @@ See `docs/template_framework/okf_authoring_and_migration.md`.
 
 - TBD
 
+## Correction Scope Map
+
+Only for corrective prompts on round 2 or later; delete this section otherwise
+(`docs/template_framework/closure_convergence.md`).
+
+- Findings addressed:
+- Allowed files and claims:
+- Claims withdrawn or narrowed:
+- Evidence invalidated:
+- Minimum rerun set:
+
+## Candidate Identity
+
+Only when this prompt freezes an identity-bound candidate; delete this section
+otherwise (`docs/template_framework/candidate_review_acceptance.md`).
+
+- Identity strategy (file / manifest / git):
+- Candidate paths:
+- Identity value recorded at freeze:
+- Review and acceptance records land outside the candidate.
+
 ## Verification
 
 - TBD
@@ -65,6 +82,18 @@ See `docs/template_framework/okf_authoring_and_migration.md`.
 - When changed artifacts cite repository paths or `test_*` identifiers, run:
   `python scripts/artifact_integrity_preflight.py <artifact> [<artifact> ...]`.
   Resolve hard errors before handoff; report advisory warnings with context.
+  Invocation notes (prompt author: keep whichever apply):
+  - when the slice's tests live outside `tests/`, add repeatable
+    `--tests-root` flags for every test tree the artifact cites (for example
+    `--tests-root tests --tests-root 08_pkg/tests`) — the bare command
+    hard-errors on identifiers from other trees;
+  - a planned-but-not-yet-written output path is cited via repeatable
+    `--allow-missing <repo-relative-path>` (stays visible as a warning);
+  - a citation of a removed path stays advisory when nearby prose marks it
+    historical ("removed", "deleted", "no longer", ...);
+  - the scaffold suite regenerates `08_pkg/generated/okf_navigation.md`
+    during a validation run (normally byte-identical); this does not violate
+    a "no files outside the slice modified" check.
 
 ## Self-Report
 

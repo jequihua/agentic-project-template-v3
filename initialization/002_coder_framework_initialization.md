@@ -58,6 +58,8 @@ Definition Of Done Audit:
 
 Non-Goals Confirmed:
 
+Deviations From Prompt:
+
 Memory Used:
 
 Memory Update Requested:

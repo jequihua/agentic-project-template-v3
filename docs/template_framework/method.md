@@ -26,6 +26,46 @@ The method prefers:
 6. `PROJECT_STATE.md` and relevant indexes are updated.
 7. Human owner decides whether to proceed, pause, or redirect.
 
+Reviews are numbered rounds with an escalation ladder; findings carry P0-P3
+dispositions; and a reviewer may not widen a slice's acceptance envelope. The
+canonical convergence contract is
+`docs/template_framework/closure_convergence.md`: the third same-invariant
+recurrence routes to architect reassessment with human awareness, not another
+corrective prompt. Identity-bound deliveries (frozen handoffs, release
+candidates, migrations) additionally follow
+`docs/template_framework/candidate_review_acceptance.md`.
+
+### The Loop On One Page
+
+Who writes what, where it lands, and which routing row it touches:
+
+| Step | Actor | Artifact | Lands in | Routing row |
+| --- | --- | --- | --- | --- |
+| 1 | architect/reviewer | coding prompt | `prompts/for_coding_agent/` | `prompts/INDEX.md` |
+| 2 | coder | implementation and tests | paths named by the prompt | none |
+| 3 | coder | self-report (schema: `prompts/templates/self_report.md`) | the milestone folder under `05_governance/reviews/` | `05_governance/reviews/INDEX.md` |
+| 4 | architect/reviewer | review prompt (with `round:`) | `prompts/for_review_agent/` | `prompts/INDEX.md` |
+| 5 | reviewer | review report ending in one verdict line | the milestone folder under `05_governance/reviews/` | `05_governance/reviews/INDEX.md` (Round, Verdict) |
+| 6 | architect/reviewer | `PROJECT_STATE.md` and reached-cadence indexes | repo root | cadence table below |
+| 7 | human owner | stop / go / redirect | — | — |
+
+Default conventions (a project may override them once, in a recorded
+decision; until then, these hold):
+
+- one flat number sequence across all prompts in `prompts/INDEX.md`; a
+  self-report or review report reuses its governing prompt's number plus the
+  slice and round in its filename;
+- `prompts/INDEX.md` status values: `draft`, `ready`, `delivered`,
+  `superseded`; whoever records a verdict also flips the reviewed prompt's
+  row to `delivered`;
+- review reports and fast-close correction records live in the milestone
+  folder under `05_governance/reviews/`; the verdict is the report's final
+  line plus the reviews-index cell — no separate verdict file unless a
+  project opts into one;
+- a human-owner message that carries authority (a ruling, a reported defect)
+  is transcribed to a numbered, dated note under
+  `05_governance/human_owner_notes/` before work relies on it.
+
 ### Closure Routing Ownership And Cadence
 
 Step 6 updates only the surfaces whose cadence has been reached; do not mirror

@@ -54,7 +54,7 @@ never canonical and never copy live state.
 ## Version Boundary
 
 The pinned framework candidate is `0.1-rc.1`, defined canonically in
-`08_pkg/okf_profile_v0_1.md`. Stable `0.1` is deferred until template, pairwise,
+`docs/template_framework/okf_pkg/okf_profile_v0_1.md`. Stable `0.1` is deferred until template, pairwise,
 and three-way hardening gates pass. Stable versions are not silently mutated; an
 incompatible stable evolution requires a new major version and migration decision.
 `okf_version` remains independent.
@@ -89,7 +89,7 @@ implemented.
 ## Deferred Areas
 
 Profile fields are specified in the candidate contract
-`08_pkg/okf_profile_v0_1.md`; fixture vocabulary and outcomes are pinned by
+`docs/template_framework/okf_pkg/okf_profile_v0_1.md`; fixture vocabulary and outcomes are pinned by
 `tests/fixtures/okf_profile/manifest.json`; the YAML syntax engine is PyYAML
 (§6.6 of the profile). Drift evaluation and llloom/frutlups runtime integration are
 decided only in their reviewed roadmap slices.

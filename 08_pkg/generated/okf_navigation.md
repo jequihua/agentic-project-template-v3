@@ -14,16 +14,16 @@
 
 ## Package Contracts
 
-- [Package status and shipped capabilities](../package_status.md) — `08_pkg/package_status.md`
-- [Architecture, preserved authorities, and boundaries](../architecture_contract.md) — `08_pkg/architecture_contract.md`
-- [Public surface and API contract](../public_api_contract.md) — `08_pkg/public_api_contract.md`
-- [Framework-profile candidate contract](../okf_profile_v0_1.md) — `08_pkg/okf_profile_v0_1.md`
+- [Package status and shipped capabilities](../../docs/template_framework/okf_pkg/package_status.md) — `docs/template_framework/okf_pkg/package_status.md`
+- [Architecture, preserved authorities, and boundaries](../../docs/template_framework/okf_pkg/architecture_contract.md) — `docs/template_framework/okf_pkg/architecture_contract.md`
+- [Public surface and API contract](../../docs/template_framework/okf_pkg/public_api_contract.md) — `docs/template_framework/okf_pkg/public_api_contract.md`
+- [Framework-profile candidate contract](../../docs/template_framework/okf_pkg/okf_profile_v0_1.md) — `docs/template_framework/okf_pkg/okf_profile_v0_1.md`
 
 ## Checker, Fixtures, and Tests
 
 - [Scripts and the profile-checker CLI](../../scripts/README.md) — `scripts/README.md`
 - [Golden-fixture manifest and parser oracle](../../tests/fixtures/okf_profile/manifest.json) — `tests/fixtures/okf_profile/manifest.json`
-- [Testing strategy and regeneration tests](../testing_strategy.md) — `08_pkg/testing_strategy.md`
+- [Testing strategy and regeneration tests](../../docs/template_framework/okf_pkg/testing_strategy.md) — `docs/template_framework/okf_pkg/testing_strategy.md`
 
 ## Milestones
 

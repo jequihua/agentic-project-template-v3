@@ -718,7 +718,8 @@ class TemplateScaffoldTests(unittest.TestCase):
             ("frutlups modes",
              (framework / "frutlups_modes.md").read_text(encoding="utf-8")),
             ("okf profile",
-             (ROOT / "08_pkg" / "okf_profile_v0_1.md").read_text(encoding="utf-8")),
+             (ROOT / "docs" / "template_framework" / "okf_pkg" / "okf_profile_v0_1.md"
+              ).read_text(encoding="utf-8")),
         ):
             with self.subTest(unchanged_contract=label):
                 for register in ("Not Yet Specified", "Ruled Out"):

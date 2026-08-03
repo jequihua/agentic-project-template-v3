@@ -6,7 +6,7 @@ framework_profile: "0.1-rc.1"
 # OKF Authoring And Migration
 
 The single practical guide for applying the accepted framework profile
-(`08_pkg/okf_profile_v0_1.md`, pinned candidate `framework_profile: "0.1-rc.1"`) to
+(`docs/template_framework/okf_pkg/okf_profile_v0_1.md`, pinned candidate `framework_profile: "0.1-rc.1"`) to
 new artifacts and for adopting it gradually in a mixed repository. This guide does not
 restate the profile's full field, YAML, namespace, or reason-code specification — it
 tells you the minimum to author correctly and how to adopt or roll back safely.

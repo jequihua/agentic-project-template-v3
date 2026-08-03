@@ -41,7 +41,7 @@ The profile has no workflow, trust, or execution authority:
 ## 2. Layer Model And Separated Results
 
 A document is evaluated at independent layers; a lower-layer pass never implies a
-higher-layer pass. This mirrors `08_pkg/architecture_contract.md` (Layer
+higher-layer pass. This mirrors `docs/template_framework/okf_pkg/architecture_contract.md` (Layer
 Boundary).
 
 | Layer | Scope | Owner |
@@ -475,6 +475,6 @@ a consumer verifies the cited bytes against this pinned record.
 
 ### Framework decisions
 
-The layer/version boundaries in `08_pkg/architecture_contract.md` and the shipped
+The layer/version boundaries in `docs/template_framework/okf_pkg/architecture_contract.md` and the shipped
 governance records under `05_governance/`. Planning notes explain the framework layer
 but do not redefine OKF.

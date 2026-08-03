@@ -7,7 +7,7 @@ architect operating card ship for candidate profile `0.1-rc.1`.
 ## Framework-Profile Contract
 
 The versioned framework-profile document contract is defined canonically in
-`08_pkg/okf_profile_v0_1.md`, which pins the candidate
+`docs/template_framework/okf_pkg/okf_profile_v0_1.md`, which pins the candidate
 `framework_profile: "0.1-rc.1"`. That file is the single source for profile
 fields, namespaces, artifact types, the YAML producer envelope, and the separated
 OKF/profile/execution result vocabulary; this contract does not restate it. The

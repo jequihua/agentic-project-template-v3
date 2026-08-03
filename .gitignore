@@ -56,11 +56,22 @@ generated/
 *_work/
 *_graphab_work/
 
+# === Tool caches ===
+.cache/
+.tox/
+.nox/
+
+# === Merge and backup residue ===
+*.orig
+*.rej
+*.bak
+
 # === Notebook checkpoints ===
 .ipynb_checkpoints/
 
 # === OS / editor noise ===
 .DS_Store
 Thumbs.db
+desktop.ini
 .vscode/
 .idea/

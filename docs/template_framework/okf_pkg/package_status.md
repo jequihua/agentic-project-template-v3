@@ -13,7 +13,7 @@ Shipped capabilities:
   default checks are standard-library only), and proportional append-only Level 1
   fast-close — covered by focused scaffold tests;
 - the canonical framework-profile candidate contract at
-  `08_pkg/okf_profile_v0_1.md` (`framework_profile: "0.1-rc.1"`);
+  `docs/template_framework/okf_pkg/okf_profile_v0_1.md` (`framework_profile: "0.1-rc.1"`);
 - the manifest-driven golden-fixture corpus under `tests/fixtures/okf_profile/`,
   with separate per-parser and per-layer outcomes and deterministic integrity
   tests;

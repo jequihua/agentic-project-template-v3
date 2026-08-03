@@ -74,5 +74,5 @@ authority: a newly accepted template-owned type must be added here or a test fai
 - Strictness levels: `docs/template_framework/review_strictness_levels.md`.
 - Review protocol: `05_governance/current/review_protocol.md`.
 - Authoring and migration: `docs/template_framework/okf_authoring_and_migration.md`.
-- Profile contract: `08_pkg/okf_profile_v0_1.md`.
+- Profile contract: `docs/template_framework/okf_pkg/okf_profile_v0_1.md`.
 - Live state: `PROJECT_STATE.md`.

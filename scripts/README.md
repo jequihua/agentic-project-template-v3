@@ -85,7 +85,7 @@ Do not use illustrative notation to disguise a real repository citation.
 ### Optional `--profile` framework-profile check
 
 `--profile` adds an opt-in, read-only check of the pinned framework profile
-`0.1-rc.1` (defined in `08_pkg/okf_profile_v0_1.md`). It is backed by a mandatory,
+`0.1-rc.1` (defined in `docs/template_framework/okf_pkg/okf_profile_v0_1.md`). It is backed by a mandatory,
 bounded PyYAML `SafeLoader` adapter (`okf_yaml_profile.py`) — the declared PyYAML
 dependency must be installed (see `ENVIRONMENT.md`); absent it, `--profile` fails
 clearly (exit 2) with no custom-parser fallback. It reports three **separate**

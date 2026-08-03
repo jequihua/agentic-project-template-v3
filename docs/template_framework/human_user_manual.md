@@ -371,16 +371,18 @@ Files:
 Optional workspace. Activate it when the project includes reusable package code
 or a library/API.
 
-Files:
+Ships empty apart from orientation files and the pinned OKF navigation
+tooling (see `08_pkg/README.md`):
 
 - `CONTEXT.md`: workspace orientation.
-- `README.md`: package overview.
-- `architecture_contract.md`: module boundaries and architecture rules.
-- `public_api_contract.md`: public API expectations.
-- `testing_strategy.md`: package testing approach.
-- `package_status.md`: scoped package status.
-- `src/`: package source tree.
+- `README.md`: package overview and what belongs here.
+- `src/`: your package source tree.
 - `tests/README.md`: package test orientation.
+
+Contract docs the project adds as they are earned (none ship):
+`architecture_contract.md`, `public_api_contract.md`, `testing_strategy.md`,
+`package_status.md`. The template's own OKF package documentation lives in
+`docs/template_framework/okf_pkg/`, not here.
 
 Important: this is inside the development repository. It is not a nested git
 repo. If the package later needs a public repository, use the front-facing repo

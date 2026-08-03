@@ -1,36 +1,25 @@
 # Package Workspace
 
-Status: ships the reusable OKF/profile framework contracts; also holds a
-project's own package contracts when packaging is justified.
+Status: ships empty — this workspace belongs to YOUR project's package code.
 
-Keep package contracts close to the code:
+When the package toggle is activated (`docs/template_framework/project_profiles.md`):
 
-- `architecture_contract.md`
-- `public_api_contract.md`
-- `testing_strategy.md`
-- `package_status.md`
+- package source code goes under `08_pkg/src/` in your package's directory;
+- package tests go under `08_pkg/tests/` (see its README for the discovery
+  command shape);
+- add project-owned contract docs here as they are earned — for example
+  `architecture_contract.md`, `public_api_contract.md`, `testing_strategy.md`,
+  `package_status.md`. None are required up front.
 
-## Optional navigation view
+The template's own OKF/profile package documentation formerly lived here; it
+is framework-owned and now lives in `docs/template_framework/okf_pkg/`.
 
-`08_pkg/generated/okf_navigation.md` is an optional, generated, **disposable**
-navigation read model over the OKF backbone (this package's contracts plus
-`PROJECT_STATE.md`, `scripts/README.md`, the fixture manifest, and `MILESTONES.md`).
-It is **not authoritative** and never copies live state; deleting it loses no
-canonical information, and the direct links above plus the linked contracts remain
-the manual navigation path. Regenerate or verify it with:
+## Template-owned tooling that remains in this folder
 
-```text
-python scripts/generate_okf_navigation.py
-python scripts/generate_okf_navigation.py --check
-```
-
-It is not part of the mandatory `CLAUDE.md` read order.
-
-## Architect operating card
-
-`docs/template_framework/architect_operating_card.md` is the compact,
-registry-validated architect quick start for the OKF/profile lane: the normal loop,
-the four OKF rules, the artifact-type selection aid, the authority warning, and the
-escalation triggers. It is a routine operator surface, not an authority; canonical
-rules stay in `08_pkg/okf_profile_v0_1.md` and the source-of-truth hierarchy in
-`CLAUDE.md`.
+Two OKF-lane tooling artifacts stay at their pinned paths (the generator and
+scaffold tests hard-code them): `08_pkg/okf_navigation_manifest.json` and the
+optional, generated, disposable `08_pkg/generated/okf_navigation.md`
+(regenerate or verify with `python scripts/generate_okf_navigation.py` /
+`--check`). They are not authoritative, never copy live state, and are not
+part of your project's package. Leave them alone unless working on the OKF
+lane itself.

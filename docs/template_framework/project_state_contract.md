@@ -84,5 +84,6 @@ dated snapshot rather than continuing truth.
 - Reviews: the latest accepted review feeds `Latest accepted review`. Reviews are
   historical evidence; `PROJECT_STATE.md` summarizes the resulting live state.
 - Prompts: reference `PROJECT_STATE.md` for current state; they do not restate it.
-- Workspace status docs (for example `08_pkg/package_status.md`): scoped to that
+- Workspace status docs (for example a project-authored package-status doc
+  in `08_pkg/`): scoped to that
   workspace, not a second global state surface.

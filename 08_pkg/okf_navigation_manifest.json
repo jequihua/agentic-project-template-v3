@@ -15,10 +15,10 @@
       "group_id": "package_contracts",
       "title": "Package Contracts",
       "sources": [
-        { "path": "08_pkg/package_status.md", "label": "Package status and shipped capabilities" },
-        { "path": "08_pkg/architecture_contract.md", "label": "Architecture, preserved authorities, and boundaries" },
-        { "path": "08_pkg/public_api_contract.md", "label": "Public surface and API contract" },
-        { "path": "08_pkg/okf_profile_v0_1.md", "label": "Framework-profile candidate contract" }
+        { "path": "docs/template_framework/okf_pkg/package_status.md", "label": "Package status and shipped capabilities" },
+        { "path": "docs/template_framework/okf_pkg/architecture_contract.md", "label": "Architecture, preserved authorities, and boundaries" },
+        { "path": "docs/template_framework/okf_pkg/public_api_contract.md", "label": "Public surface and API contract" },
+        { "path": "docs/template_framework/okf_pkg/okf_profile_v0_1.md", "label": "Framework-profile candidate contract" }
       ]
     },
     {
@@ -27,7 +27,7 @@
       "sources": [
         { "path": "scripts/README.md", "label": "Scripts and the profile-checker CLI" },
         { "path": "tests/fixtures/okf_profile/manifest.json", "label": "Golden-fixture manifest and parser oracle" },
-        { "path": "08_pkg/testing_strategy.md", "label": "Testing strategy and regeneration tests" }
+        { "path": "docs/template_framework/okf_pkg/testing_strategy.md", "label": "Testing strategy and regeneration tests" }
       ]
     },
     {

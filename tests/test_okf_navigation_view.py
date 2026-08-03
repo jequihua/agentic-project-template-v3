@@ -112,7 +112,7 @@ class RealRepoViewTests(unittest.TestCase):
         self.assertIn("Current objective", state)  # sanity: the source owns this
         for leaked in ("Current objective", "Next expected action", "Latest accepted review"):
             self.assertNotIn(leaked, text)
-        arch = (ROOT / "08_pkg" / "architecture_contract.md").read_text(encoding="utf-8")
+        arch = (ROOT / "docs" / "template_framework" / "okf_pkg" / "architecture_contract.md").read_text(encoding="utf-8")
         self.assertIn("Preserved Authorities", arch)
         self.assertNotIn("Preserved Authorities", text)
 
@@ -126,9 +126,12 @@ class RealRepoViewTests(unittest.TestCase):
 
     def test_required_sources_are_all_routed(self) -> None:
         required = {
-            "PROJECT_STATE.md", "08_pkg/package_status.md",
-            "08_pkg/architecture_contract.md", "08_pkg/okf_profile_v0_1.md",
-            "08_pkg/public_api_contract.md", "08_pkg/testing_strategy.md",
+            "PROJECT_STATE.md",
+            "docs/template_framework/okf_pkg/package_status.md",
+            "docs/template_framework/okf_pkg/architecture_contract.md",
+            "docs/template_framework/okf_pkg/okf_profile_v0_1.md",
+            "docs/template_framework/okf_pkg/public_api_contract.md",
+            "docs/template_framework/okf_pkg/testing_strategy.md",
             "tests/fixtures/okf_profile/manifest.json", "scripts/README.md",
             "MILESTONES.md",
         }

@@ -44,7 +44,7 @@ FORBIDDEN_FRAGMENTS = (
 # The shipped profile records the normative OKF source as an external, revision-pinned
 # reference (not vendored). This is the exact release provenance contract; the shipped
 # guard below validates it entirely offline (local files only, no network).
-PROFILE = ROOT / "08_pkg" / "okf_profile_v0_1.md"
+PROFILE = ROOT / "docs" / "template_framework" / "okf_pkg" / "okf_profile_v0_1.md"
 PROV_SOURCE_ID = "OKF"
 PROV_VERSION = "0.1-draft"
 PROV_UPSTREAM_PATH = "okf/SPEC.md"

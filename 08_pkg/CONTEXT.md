@@ -2,16 +2,17 @@
 
 Status: inactive unless package work is activated.
 
-Purpose: hold reusable package code when packaging is justified.
+Purpose: hold this project's reusable package code, tests, and package
+contract docs when packaging is justified. Ships empty; see `README.md`.
 
 Read first when active:
 - `README.md`
-- `architecture_contract.md`
-- `public_api_contract.md`
-- `testing_strategy.md`
+- the project-owned contract docs your project has added, if any
 
 Does not belong here:
 - broad governance;
 - prompt history;
-- raw data.
-
+- raw data;
+- template framework documentation (that lives under
+  `docs/template_framework/`, including the OKF package docs in
+  `docs/template_framework/okf_pkg/`).

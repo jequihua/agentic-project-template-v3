@@ -63,6 +63,8 @@ Default loop:
 - Do not duplicate current state across many files.
 - If a fact is copied in more than one place, consider whether it should live
   only in `PROJECT_STATE.md` or be generated.
+- You own review-finding severity, withdrawal, and closure, and you record
+  the owner's risk-acceptance decisions; coders remediate or challenge only.
 - You are the default committer at milestone closure: after a positive milestone
   verdict, run the Milestone Commit Closure checklist (check `.gitignore`,
   run/record validation, stage only accepted changes, inspect the staged diff) and

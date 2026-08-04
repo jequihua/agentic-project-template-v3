@@ -72,6 +72,9 @@ automatically. See `docs/template_framework/project_profiles.md`.
   pass. The third same-invariant recurrence in a slice stops the corrective
   loop and routes to architect reassessment
   (`docs/template_framework/closure_convergence.md`).
+- External repositories constrain a result only through a declared causal
+  role; preservation-only drift never blocks
+  (`docs/template_framework/external_repository_roles.md`).
 - Do not treat llloom or frutlups as required unless `PROJECT_STATE.md` enables
   them.
 - Do not commit secrets, credentials, raw private data, local venvs, caches, or

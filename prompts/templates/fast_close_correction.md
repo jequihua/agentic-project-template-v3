@@ -29,6 +29,16 @@ The full rule lives in `05_governance/current/review_protocol.md`.
 
 Any of the above requires a normal Level 2+ slice and review.
 
+## Attribution-Only Corrections
+
+A finding-attribution defect (the record misstates who dispositioned or
+corrected a finding) is fast-close eligible when all five hold: the
+substantive measurements already reproduce; no score, severity, verdict,
+behavior, contract, or authority input changes; the correct actor and
+disposition are objective from an existing review, amendment, or owner
+record; the correction preserves historical text via append-only
+supersession; and a focused diff plus a direct citation check prove closure.
+
 ## Correction
 
 Actor:
@@ -38,6 +48,14 @@ Date:
 Reason:
 
 Linked evidence or finding:
+
+Prior disposition:
+
+New disposition:
+
+Disposition authority:
+
+Affected finding IDs:
 
 Affected current-reference file and location:
 

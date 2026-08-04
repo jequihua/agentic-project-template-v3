@@ -31,6 +31,9 @@ profiled artifact, copy the two-field minimum block and run the checker.
 - Do not mutate llloom memory unless assigned a memory-update slice.
 - Do not use frutlups unless `PROJECT_STATE.md` or the prompt enables it.
 - Stop and write a question artifact when ownership or evidence is external.
+- Remediate or challenge review findings with evidence; never withdraw,
+  reclassify, waive, or independently close them — disposition belongs to
+  the reviewer, architect, or owner.
 - Do not commit during implementation unless explicitly assigned; the
   architect/reviewer is the default committer at milestone closure (see
   `docs/template_framework/method.md` Commit Discipline).

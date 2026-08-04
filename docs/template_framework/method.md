@@ -169,20 +169,23 @@ accepted closure, or by an explicitly authorized workflow), run this checklist
 before staging:
 
 1. Run validation, or record why it cannot be run.
-2. Inspect `git status --short`.
-3. Update `.gitignore` if generated junk or local state appears.
-4. Optional local footprint glance: when tests, runs, data, memory, legacy
+2. Re-acknowledge open accepted-limitation and waiver entries with the human
+   owner; a release-objective upgrade re-opens their materiality
+   (`05_governance/current/review_protocol.md`).
+3. Inspect `git status --short`.
+4. Update `.gitignore` if generated junk or local state appears.
+5. Optional local footprint glance: when tests, runs, data, memory, legacy
    review, or package builds may have produced local state, run
    `git status --short --ignored` or `python scripts/local_state_audit.py
    --root .`. Delete only clearly rebuildable caches/build output (for example
    `python scripts/local_cleanup.py --apply`), or record retained local roots in
    `LOCAL_STATE_NOT_COMMITTED.md`. This glance is optional and never a blocker.
-5. Confirm no credentials, raw private data, caches, test output, local state, or
+6. Confirm no credentials, raw private data, caches, test output, local state, or
    unrelated files are being committed.
-6. Stage only the accepted milestone files.
-7. Inspect `git diff --cached --stat` (and `git diff --cached --name-only` when
+7. Stage only the accepted milestone files.
+8. Inspect `git diff --cached --stat` (and `git diff --cached --name-only` when
    useful).
-8. Commit with a clear milestone message.
+9. Commit with a clear milestone message.
 
 ### Pull Requests
 

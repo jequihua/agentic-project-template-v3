@@ -7,6 +7,21 @@ This is a light intake, not a hostile interrogation. Ask the human owner the
 static questions below, make only necessary follow-up asks, then use the answers
 to populate the template and create the first development roadmap.
 
+## Read For Intake
+
+Intake population needs only these, beyond the role initialization:
+
+- `docs/template_framework/project_profiles.md`
+- `docs/template_framework/project_state_contract.md`
+- `docs/template_framework/review_strictness_levels.md`
+- `prompts/templates/coding_prompt.md`
+- `docs/template_framework/prompt_style_guide.md`
+- `ENVIRONMENT.md`
+- `MILESTONES.md` (its Rules section)
+
+The full framework corpus is not intake reading; open deeper sources only on
+escalation.
+
 ## Purpose
 
 The goal is to turn the human owner's project idea into durable project

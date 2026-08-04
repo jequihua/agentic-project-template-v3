@@ -29,6 +29,14 @@ conclude the findings have different roots and work continues — but that
 conclusion is made deliberately, with the human owner aware, in one bounded
 planning turn.
 
+Circuit breaker (fires before the round count): if every confirmed finding
+of a round falsifies only claims or states introduced by the previous
+round's correction — none standing against the envelope as it existed before
+that correction — the next step is architect reassessment or owner
+disposition, never another same-shape corrective prompt. This is computable
+from artifacts that already exist: each round's claim map plus the findings'
+violated-invariant statements.
+
 ## Recurrence
 
 A recurrence is the same violated invariant, or materially the same refuted
@@ -73,6 +81,14 @@ When the parties disagree about what the envelope's own words mean — for
 example whether a stated guarantee is scoped or unscoped — the human owner
 arbitrates (source-of-truth rank 1), and the ruling is recorded durably (a
 decision-log row or owner note), not left in chat.
+
+Conformance is not release disposition. A finding can be true — the
+implementation really does fail the stated falsifier — and still be accepted
+debt when it is immaterial inside the supported release model (the
+materiality gate in `05_governance/current/review_protocol.md` decides). The
+verdict vocabulary is unchanged; the owner waiver/`override` path is the
+routine, early route for true-but-immaterial residue, not a late escape
+hatch discovered after many rounds.
 
 ## Corrective Passes
 
@@ -126,8 +142,8 @@ finding of its disposition, but it is never reported as a product
 regression.
 
 Proof-bearing terms: `all`, `every`, `complete`, `no path`, `exact`,
-`independent`, `mechanism-complete`. A blocking finding or acceptance claim
-using one must give a compact claim map:
+`total`, `independent`, `mechanism-complete`. A blocking finding or
+acceptance claim using one must give a compact claim map:
 
 - claim — the bounded property asserted;
 - domain — the finite set or bounded grammar it holds over;
@@ -138,6 +154,29 @@ using one must give a compact claim map:
 
 If the domain cannot be bounded, narrow the claim. A finite adversarial list
 never proves an unbounded universal.
+
+The claim budget applies at authoring time: proof-bearing terms in a coding
+prompt's Task, Verification, or Definition Of Done require the same claim
+record adjacent in the prompt (claim, enumerated domain, exclusions,
+material consequence, independent falsifier, causal witness). A coder is
+never obligated to deliver a universal the prompt's own claim record does
+not bound; prefer "for states A-D" over "every". The ratchet's source is the
+prompt, not the report.
+
+Probe classes: a conformance probe drives only real supported seam outcomes
+and may block; a host-limitation probe records an unavailable real
+integration honestly; a synthetic-robustness probe deliberately exceeds the
+seam and routes to P3/hardening unless a baseline safety rail is crossed. A
+blocking fault-injection finding names the real seam outcome it models.
+Reviewers may probe anything — classes bound what a probe may block, never
+what it may investigate.
+
+For a seam that already meets the powerful-harness definition below, a slice
+MAY adopt a failure-model ledger
+(`prompts/templates/failure_model_ledger.md`), versioned and frozen with the
+round's candidate identity; a reviewer who believes the frozen ledger is
+wrong files an `envelope expansion` finding rather than blocking in place.
+The ledger is optional; no slice requires it.
 
 A harness is powerful when it can delete or replace filesystem entries,
 create or alter repositories outside a disposable root, build or install
@@ -150,11 +189,16 @@ operation; carry causal negative tests for early failure and refusal paths;
 and keep diagnostics bounded, with no silent recovery that changes the
 claimed result.
 
-When a lane claims an external repository is read-only or unchanged, compare
-the same closed-world snapshot before and after: repository identity, HEAD,
-the complete status entry set, and content identity for every pre-existing
-changed or untracked entry in the declared set. Any unaccounted change fails
-the lane; attribution by filename or by path-set difference is not proof.
+When a lane consumes an external repository as `authority_input`, or writes
+inside a declared `mutation_target` envelope
+(`docs/template_framework/external_repository_roles.md`), prove the interval
+with the same closed-world snapshot before and after: repository identity,
+HEAD, the complete status entry set, and content identity for every
+pre-existing changed or untracked entry in the declared set. Any unaccounted
+change fails the lane; attribution by filename or by path-set difference is
+not proof. Drift in a `preservation_only` repository is reported and
+dispositioned by role; it never fails an unrelated lane, and an undeclared
+neighbor is never a gate at all.
 
 Convergence check: a correction must reduce unresolved acceptance
 obligations. A correction that introduces as many new proof mechanisms or

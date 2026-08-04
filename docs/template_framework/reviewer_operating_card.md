@@ -42,6 +42,13 @@ live-state source — this card copies none of it.
 - A universal term (`all`, `every`, `no path`, `exact`, `independent`) in
   blocking evidence needs a bounded domain and an independent falsifier;
   if the domain cannot be bounded, narrow the claim.
+- External repositories block only through their declared causal role;
+  preservation-only drift is reported, never a gate
+  (`docs/template_framework/external_repository_roles.md`).
+- You answer the materiality questions before P1/P2 — never the implementer;
+  a blocking fault-injection finding names the real seam outcome it models.
+- Finding dispositions are role-owned: the coder remediates or challenges;
+  you withdraw or close; the owner accepts risk.
 
 ## Escalate instead of improvising
 

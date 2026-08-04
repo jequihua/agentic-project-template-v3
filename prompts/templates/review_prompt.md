@@ -40,7 +40,15 @@ Convergence (canonical: `docs/template_framework/closure_convergence.md`):
   `needs_work`;
 - candidate mode only: the report names the exact candidate identity
   reviewed, and recording the verdict changed no candidate bytes
-  (`docs/template_framework/candidate_review_acceptance.md`).
+  (`docs/template_framework/candidate_review_acceptance.md`);
+- external repositories: declared roles match the actual commands and
+  consumed surfaces, and drift is dispositioned by role
+  (`docs/template_framework/external_repository_roles.md`) — global quiet is
+  never a gate;
+- inherited findings only: reconcile the coder's claims against the
+  controlling delta table before substantive gates — entering disposition,
+  evidence, reviewer disposition, authority actor
+  (`05_governance/current/review_protocol.md`).
 
 Substance:
 

@@ -21,6 +21,17 @@ Prompts should make the next action safer without becoming a mini manual.
   read-only `scripts/artifact_integrity_preflight.py` check before semantic
   review.
 
+## Claims And Amendments
+
+- Universal words (`all`, `every`, `complete`, `no path`, `exact`, `total`)
+  are budgeted at authoring time: enumerate the domain in a claim record or
+  narrow the sentence before the prompt ships — the ratchet's source is the
+  prompt, not the report (`docs/template_framework/closure_convergence.md`).
+- When an amendment changes a finding's disposition, place one compact
+  controlling delta table before the active task and explicitly supersede
+  contradictory operative wording; the historical amendment record keeps the
+  old text. Operative prompts carry one clear controlling instruction.
+
 ## Size Budgets
 
 Budgets are guidance, not gates, but respect them:

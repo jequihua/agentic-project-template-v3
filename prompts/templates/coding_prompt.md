@@ -52,12 +52,30 @@ See `docs/template_framework/okf_authoring_and_migration.md`.
 
 - TBD
 
+## External Repositories
+
+Only when the task consumes or writes outside this repository; delete this
+section otherwise (`docs/template_framework/external_repository_roles.md`).
+Repositories not listed are out of scope: do not snapshot them, and their
+activity is never a gate.
+
+| Repository | Role | Exact consumed surface or write envelope | Identity basis |
+| --- | --- | --- | --- |
+| TBD | TBD | TBD | TBD |
+
 ## Correction Scope Map
 
 Only for corrective prompts on round 2 or later; delete this section otherwise
 (`docs/template_framework/closure_convergence.md`).
 
-- Findings addressed:
+- Findings addressed: the controlling delta table below governs this slice.
+  When an amendment changes a disposition, a new table placed here supersedes
+  earlier task wording; history stays in the amendment record.
+
+| Finding | Prior disposition | Controlling authority action | Coder obligation | Required closure proof |
+| --- | --- | --- | --- | --- |
+| TBD | TBD | TBD | TBD | TBD |
+
 - Allowed files and claims:
 - Claims withdrawn or narrowed:
 - Evidence invalidated:
@@ -79,6 +97,10 @@ otherwise (`docs/template_framework/candidate_review_acceptance.md`).
 - When cases share setup and assertion shape, prefer table-driven tests or
   `subTest`; keep tests separate when behavior, setup, or the failure story
   differs, and assert exact contract values individually.
+- If this prompt's Task or Definition Of Done uses a proof-bearing term
+  (`all`, `every`, `complete`, `no path`, `exact`, `total`), include the
+  claim record required by `docs/template_framework/closure_convergence.md`
+  adjacent to it, or narrow the sentence.
 - When changed artifacts cite repository paths or `test_*` identifiers, run:
   `python scripts/artifact_integrity_preflight.py <artifact> [<artifact> ...]`.
   Resolve hard errors before handoff; report advisory warnings with context.

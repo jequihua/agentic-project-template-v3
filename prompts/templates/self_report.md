@@ -27,8 +27,18 @@ Verification Run:
 Record commands and results as dated/run-specific evidence. Distinguish files
 owned by this slice from complete shared-worktree state; do not present a
 worktree snapshot, active prompt number, or next action as continuing truth.
+Report observed external-repository drift honestly with its declared role
+(`docs/template_framework/external_repository_roles.md`); preservation-only
+drift is reported, not upgraded into a stop.
 
 Definition Of Done Audit:
+
+When this slice works from review findings, reproduce the controlling
+disposition table here and distinguish findings this slice remediated,
+findings it only challenged, findings already withdrawn by reviewer
+authority, and findings still open. Never claim closure of a finding another
+authority dispositioned. Cite owner or architect instructions by exact
+artifact and section, never as invented quotations.
 
 Non-Goals Confirmed:
 

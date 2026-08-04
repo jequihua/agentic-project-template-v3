@@ -82,9 +82,28 @@ evidence / authority / environment):
 | Disposition | Meaning | Default routing |
 | --- | --- | --- |
 | P0 | imminent safety, security, data-loss, credential, or destructive-authority risk | stop immediately; human awareness |
-| P1 | incorrect behavior, broken contract, invalid candidate identity, or material architectural error | `needs_work` |
+| P1 | incorrect behavior, broken public/frozen/release-critical contract, invalid candidate identity, or material architectural error | `needs_work` |
 | P2 | material bounded defect in authority, evidence, compatibility, or maintainability | `needs_work` while unresolved |
-| P3 | clarity, style, or follow-up that cannot misroute execution or falsify acceptance | may accompany `pass` as named follow-up |
+| P3 | clarity, style, pre-effect local cleanup or diagnostic incompleteness, synthetic-only robustness, or follow-up that cannot misroute execution or falsify acceptance | may accompany `pass` as named follow-up |
+
+An internal assurance sentence worded too broadly is narrowed under the claim
+budget (`docs/template_framework/closure_convergence.md`); its product
+consequence is assessed separately, not inherited from the sentence.
+
+Before recording P1 or P2, the reviewer — never the implementer — answers:
+
+1. Can the outcome execute or authorize an unintended external effect?
+2. Can it corrupt, destroy, expose, or falsely accept project data or
+   evidence?
+3. Can it misroute recovery, spend, credentials, or trust boundaries?
+4. Can it persist beyond the failing process or cause unbounded resource
+   use?
+5. Is it a real supported seam outcome rather than synthetic-only behavior?
+6. Is the failed property explicitly required for this release rather than
+   an overbroad assurance sentence?
+
+All answers no routes the finding to P3. Materiality disagreements go to the
+envelope arbiter (the human owner), recorded durably.
 
 An unresolved P0-P2 finding never coexists with `pass`. There is no
 "non-blocking P2": if independent review cannot show a defect is unable to
@@ -95,7 +114,30 @@ external evidence, or authority) — the verdict line's next move then names
 the owning actor.
 A human owner may record an explicit external waiver naming the exact finding
 and the reviewed identity; a waiver is a separate decision record and never
-rewrites the review or its verdict.
+rewrites the review or its verdict. Waiver and override entries are
+identity-bound and are re-acknowledged by the owner at milestone closure and
+at any release-objective upgrade — materiality is release-objective-relative.
+
+## Finding Disposition Lifecycle
+
+This lifecycle activates only when a correction inherits findings or a
+finding changes state; ordinary passing reviews carry none of it.
+
+| State | Meaning | Who may record it |
+| --- | --- | --- |
+| `open` | independently reported and unresolved | reviewer |
+| `remediated_pending_review` | coder claims the underlying defect was corrected — a claim only | coder |
+| `disputed_pending_review` | coder supplies counter-evidence — a challenge only | coder |
+| `withdrawn_by_reviewer` | the finding was materially wrong or inapplicable | reviewer, or architect acting in reviewer role |
+| `closed_by_review` | independent review confirms remediation | reviewer |
+| `accepted_risk_by_owner` | unresolved finding knowingly accepted | human owner; architect may record the decision |
+
+A coder owns remediation evidence, not review disposition. Counter-evidence
+routes a finding to reviewer reconsideration; it does not withdraw it. Only
+the reviewer or architect may withdraw or close a review finding, and only
+the human owner accepts unresolved risk. A withdrawal record states why the
+review was wrong or no longer applicable, and correction evidence never
+silently changes a finding's disposition.
 
 ## Review Output Shape
 
@@ -111,6 +153,12 @@ Use findings-first review:
 Each finding carries its P0-P3 disposition and plane word; blocking findings
 name the violated invariant. On round 2 or later, review only the previously
 blocking findings, the delta, and invalidated evidence.
+
+On round 2 or later, open the report with a compact closure receipt of at
+most fifteen lines: the candidate or reviewed identity, finding IDs opened
+and closed with their dispositions, the claim-map reference, the current-run
+verification summary, and the verdict line. Append-only history remains the
+audit trail; the closure receipt is the active decision surface.
 
 End every review report with exactly one final verdict line:
 

@@ -59,6 +59,10 @@ authority: a newly accepted template-owned type must be added here or a test fai
   (`docs/template_framework/closure_convergence.md`).
 - Candidate bytes never own review/acceptance status
   (`docs/template_framework/candidate_review_acceptance.md`).
+- External repositories block only through a declared causal role
+  (`docs/template_framework/external_repository_roles.md`); findings have
+  role-owned dispositions — coder remediates or challenges, reviewer
+  withdraws or closes, owner accepts risk.
 
 ## Escalate instead of improvising when the work changes
 

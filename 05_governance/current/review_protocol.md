@@ -102,8 +102,9 @@ Before recording P1 or P2, the reviewer — never the implementer — answers:
 6. Is the failed property explicitly required for this release rather than
    an overbroad assurance sentence?
 
-All answers no routes the finding to P3. Materiality disagreements go to the
-envelope arbiter (the human owner), recorded durably.
+All answers no routes the finding to P3. Answers may be batched per finding
+class when several findings share a mechanism. Materiality disagreements go
+to the envelope arbiter (the human owner), recorded durably.
 
 An unresolved P0-P2 finding never coexists with `pass`. There is no
 "non-blocking P2": if independent review cannot show a defect is unable to
@@ -134,8 +135,8 @@ finding changes state; ordinary passing reviews carry none of it.
 
 A coder owns remediation evidence, not review disposition. Counter-evidence
 routes a finding to reviewer reconsideration; it does not withdraw it. Only
-the reviewer or architect may withdraw or close a review finding, and only
-the human owner accepts unresolved risk. A withdrawal record states why the
+the reviewer — or the architect acting in reviewer role — may withdraw or
+close a review finding, and only the human owner accepts unresolved risk. A withdrawal record states why the
 review was wrong or no longer applicable, and correction evidence never
 silently changes a finding's disposition.
 
@@ -156,9 +157,12 @@ blocking findings, the delta, and invalidated evidence.
 
 On round 2 or later, open the report with a compact closure receipt of at
 most fifteen lines: the candidate or reviewed identity, finding IDs opened
-and closed with their dispositions, the claim-map reference, the current-run
-verification summary, and the verdict line. Append-only history remains the
-audit trail; the closure receipt is the active decision surface.
+and closed with their dispositions, the claim-map reference, standing waiver
+or accepted-limitation references, the current-run verification summary, and
+the verdict line; when the slice adopts a failure-model ledger, the receipt
+names its frozen version. Append-only history remains the audit trail; the
+closure receipt is the active decision surface, and a live waiver never
+stays off it.
 
 End every review report with exactly one final verdict line:
 

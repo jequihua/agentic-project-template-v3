@@ -35,7 +35,8 @@ round's correction — none standing against the envelope as it existed before
 that correction — the next step is architect reassessment or owner
 disposition, never another same-shape corrective prompt. This is computable
 from artifacts that already exist: each round's claim map plus the findings'
-violated-invariant statements.
+violated-invariant statements. The breaker is vacuously inapplicable at
+round 2 — round 1 is not a correction, so it introduces nothing.
 
 ## Recurrence
 
@@ -142,8 +143,10 @@ finding of its disposition, but it is never reported as a product
 regression.
 
 Proof-bearing terms: `all`, `every`, `complete`, `no path`, `exact`,
-`total`, `independent`, `mechanism-complete`. A blocking finding or
-acceptance claim using one must give a compact claim map:
+`total`, `independent`, `mechanism-complete` — or equivalent phrasing
+(`never`, `always`, `any`, `guarantees`); the list is a lint, not a grammar,
+and synonyms do not escape the rule. A blocking finding or acceptance claim
+using one must give a compact **finding claim map**:
 
 - claim — the bounded property asserted;
 - domain — the finite set or bounded grammar it holds over;
@@ -156,11 +159,14 @@ If the domain cannot be bounded, narrow the claim. A finite adversarial list
 never proves an unbounded universal.
 
 The claim budget applies at authoring time: proof-bearing terms in a coding
-prompt's Task, Verification, or Definition Of Done require the same claim
-record adjacent in the prompt (claim, enumerated domain, exclusions,
-material consequence, independent falsifier, causal witness). A coder is
-never obligated to deliver a universal the prompt's own claim record does
-not bound; prefer "for states A-D" over "every". The ratchet's source is the
+prompt's Task, Verification, or Definition Of Done require a **prompt claim
+record** adjacent in the prompt — the finding claim map's four fields plus
+exclusions and material consequence (claim, enumerated domain, exclusions,
+material consequence, independent falsifier, causal witness). The four-field
+map governs blocking findings; the six-field record governs prompt
+authoring; where both apply, the record contains the map. A coder is never
+obligated to deliver a universal the prompt's own claim record does not
+bound; prefer "for states A-D" over "every". The ratchet's source is the
 prompt, not the report.
 
 Probe classes: a conformance probe drives only real supported seam outcomes

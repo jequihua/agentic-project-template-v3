@@ -48,7 +48,12 @@ Convergence (canonical: `docs/template_framework/closure_convergence.md`):
 - inherited findings only: reconcile the coder's claims against the
   controlling delta table before substantive gates — entering disposition,
   evidence, reviewer disposition, authority actor
-  (`05_governance/current/review_protocol.md`).
+  (`05_governance/current/review_protocol.md`);
+- fault injection only: a blocking finding names the real seam outcome it
+  models and its probe class (conformance / host-limitation /
+  synthetic-robustness); synthetic-only findings route to P3 unless a
+  baseline safety rail is crossed
+  (`docs/template_framework/closure_convergence.md`).
 
 Substance:
 

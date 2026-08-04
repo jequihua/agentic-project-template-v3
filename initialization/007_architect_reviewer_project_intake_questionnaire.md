@@ -18,6 +18,7 @@ Intake population needs only these, beyond the role initialization:
 - `docs/template_framework/prompt_style_guide.md`
 - `ENVIRONMENT.md`
 - `MILESTONES.md` (its Rules section)
+- `docs/template_framework/method.md` (the roadmap register semantics)
 
 The full framework corpus is not intake reading; open deeper sources only on
 escalation.

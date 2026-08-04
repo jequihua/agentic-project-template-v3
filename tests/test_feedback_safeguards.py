@@ -260,6 +260,25 @@ class FindingLifecycleTests(unittest.TestCase):
                     row["expected_route"],
                 )
 
+    def test_ordinary_slices_carry_no_lifecycle_ceremony(self):
+        # 003 case 7 as a direct structural check: every lifecycle surface is
+        # gated behind a conditional, so an ordinary passing slice meets none
+        # of it.
+        coding = _read("prompts/templates/coding_prompt.md")
+        scope = coding.split("## Correction Scope Map", 1)[1].split("## ", 1)[0]
+        self.assertIn("delete this section otherwise",
+                      " ".join(scope.lower().split()))
+        report = _read("prompts/templates/self_report.md")
+        self.assertIn("When this slice works from review findings", report)
+        self.assertIn("activates only when", self.section)
+        fast_close = _read("prompts/templates/fast_close_correction.md")
+        self.assertIn("write n/a", fast_close)
+
+    def test_reconciliation_is_capped(self):
+        flat = " ".join(_read("prompts/templates/self_report.md").split())
+        self.assertIn("Keep the reproduction compact", flat)
+        self.assertIn("fifteen-line spirit", flat)
+
     def test_amendment_dominance_rule_in_style_guide(self):
         guide = _read("docs/template_framework/prompt_style_guide.md")
         self.assertIn("controlling delta table", guide)
@@ -281,6 +300,9 @@ class RiskCalibrationTests(unittest.TestCase):
         ]
         self.assertGreaterEqual(len(numbered), 6)
         self.assertIn("All answers no routes the finding to P3", self.disposition)
+        self.assertIn(
+            "batched per finding class", " ".join(self.disposition.split())
+        )
         self.assertIn("envelope arbiter", self.disposition)
 
     def test_severity_cells_are_calibrated(self):
@@ -299,7 +321,8 @@ class RiskCalibrationTests(unittest.TestCase):
         )
         self.assertIn("`total`", assurance)
         self.assertIn(
-            "never obligated to deliver a universal", assurance
+            "never obligated to deliver a universal",
+            " ".join(assurance.split()),
         )
         self.assertIn(
             "budgeted at authoring time",
@@ -314,6 +337,7 @@ class RiskCalibrationTests(unittest.TestCase):
         self.assertIn("Circuit breaker", ladder)
         self.assertIn("introduced by the previous", ladder)
         self.assertIn("never another same-shape corrective prompt", ladder)
+        self.assertIn("inapplicable at round 2", " ".join(ladder.split()))
 
     def test_probe_classes(self):
         assurance = _section(
@@ -325,17 +349,39 @@ class RiskCalibrationTests(unittest.TestCase):
         self.assertIn(
             "names the real seam outcome it models", assurance
         )
-        self.assertIn("never\nwhat it may investigate", assurance)
+        flat = " ".join(assurance.split())
+        self.assertIn("never what it may investigate", flat)
+        # The per-slice review checklist carries the probe-class check too.
+        review = _read("prompts/templates/review_prompt.md")
+        self.assertIn("probe class", review)
+        self.assertIn("fault injection", review)
+
+    def test_proof_bearing_list_is_a_lint_not_a_grammar(self):
+        assurance = _section(
+            self.convergence, "## Assurance Claims And Powerful Harnesses"
+        )
+        flat = " ".join(assurance.replace("**", "").split())
+        self.assertIn("equivalent phrasing", flat)
+        self.assertIn("a lint, not a grammar", flat)
+        # The two claim shapes are named distinctly and reconciled.
+        self.assertIn("finding claim map", flat)
+        self.assertIn("prompt claim record", flat)
+        self.assertIn("the record contains the map", flat)
 
     def test_closure_receipt_in_output_shape(self):
         output = _section(self.protocol, "## Review Output Shape")
         self.assertIn("closure receipt", output)
         for element in (
-            "identity", "finding IDs", "claim-map", "verification summary",
-            "verdict line",
+            "identity", "finding IDs", "claim-map", "waiver",
+            "verification summary", "verdict line", "frozen version",
         ):
             with self.subTest(element=element):
                 self.assertIn(element, output)
+        flat = " ".join(output.split())
+        # The element itself, not merely the closing sentence, must be in the
+        # receipt enumeration.
+        self.assertIn("standing waiver or accepted-limitation references", flat)
+        self.assertIn("a live waiver never stays off it", flat)
 
     def test_failure_model_ledger_template(self):
         ledger = ROOT / "prompts" / "templates" / "failure_model_ledger.md"
@@ -374,6 +420,8 @@ class RiskCalibrationTests(unittest.TestCase):
         ]
         self.assertLessEqual(len(bullets), 8)
         self.assertIn("not intake reading", section)
+        # Intake authors the first roadmap; the register semantics come along.
+        self.assertIn("method.md", section)
 
     def test_materiality_oracle_truth_table(self):
         no6 = (False,) * 6

@@ -39,6 +39,9 @@ disposition are objective from an existing review, amendment, or owner
 record; the correction preserves historical text via append-only
 supersession; and a focused diff plus a direct citation check prove closure.
 
+The disposition fields below apply only when findings are involved; for an
+ordinary correction with no inherited finding, write n/a.
+
 ## Correction
 
 Actor:

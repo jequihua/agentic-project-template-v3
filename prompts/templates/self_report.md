@@ -36,9 +36,11 @@ Definition Of Done Audit:
 When this slice works from review findings, reproduce the controlling
 disposition table here and distinguish findings this slice remediated,
 findings it only challenged, findings already withdrawn by reviewer
-authority, and findings still open. Never claim closure of a finding another
-authority dispositioned. Cite owner or architect instructions by exact
-artifact and section, never as invented quotations.
+authority, and findings still open. Keep the reproduction compact — the
+table's rows plus at most one evidence line each, in the same fifteen-line
+spirit as the review-side closure receipt. Never claim closure of a finding
+another authority dispositioned. Cite owner or architect instructions by
+exact artifact and section, never as invented quotations.
 
 Non-Goals Confirmed:
 

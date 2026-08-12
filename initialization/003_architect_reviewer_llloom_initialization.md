@@ -43,17 +43,30 @@ Optional extras are not default. Install them only when needed:
 
 ## Initialize
 
-Choose a memory root. Default suggestion:
+Initialization is authorized only by the human owner setting
+`Memory mode: llloom` in `PROJECT_STATE.md`. Never initialize the lane because
+a memory directory happens to exist: directory presence is availability
+evidence only, never activation.
+
+Use the memory root configured in `frutlups.layout.yaml` under
+`optional_lanes.llloom.memory_root`. The shipped value is:
 
 ```text
 llloom_memory
 ```
 
-Record the path in:
+Choosing a different root is a contract change, not a local preference: the
+new value must remain a safe repository-relative path, and the layout field,
+`05_governance/current/memory_posture.md`, the documentation, and the tests
+must change together in one reviewed update.
 
-- `PROJECT_STATE.md`
+Record the root in:
+
 - `05_governance/current/memory_posture.md`
 - `LOCAL_STATE_NOT_COMMITTED.md`
+
+`PROJECT_STATE.md` selects the mode only; it has no memory-root field, and the
+root is never recorded there.
 
 Run:
 
@@ -86,7 +99,8 @@ Do not seed speculation, temporary debugging notes, or ungrounded claims.
 
 ## Update Protocol
 
-Memory mutation requires an explicit memory-update slice.
+Memory mutation requires an explicitly assigned memory-update slice or direct
+human-owner authority.
 
 Preferred update path:
 

@@ -949,7 +949,8 @@ Architect/reviewer:
 
 - initializes memory;
 - populates source-grounded claims;
-- updates memory only in explicit memory-update slices;
+- updates memory only in explicitly assigned memory-update slices or under
+  direct human-owner authority;
 - records posture in `05_governance/current/memory_posture.md`.
 
 Coder:
@@ -957,7 +958,8 @@ Coder:
 - reads memory only when relevant;
 - cites claims/pages used in self-report;
 - reports stale or contradictory memory;
-- does not mutate memory unless explicitly assigned.
+- does not mutate memory unless explicitly assigned a memory-update slice or
+  acting under direct human-owner authority.
 
 ### Installation Reminder
 
@@ -981,11 +983,13 @@ $llloomRepo = "<path-to-llloom-repo>"
 & $python -m pip install -e $llloomRepo
 ```
 
-Record the memory root in:
+The memory root is the layout-configured
+`optional_lanes.llloom.memory_root` in `frutlups.layout.yaml`. Record it in:
 
-- `PROJECT_STATE.md`;
 - `05_governance/current/memory_posture.md`;
 - `LOCAL_STATE_NOT_COMMITTED.md`.
+
+`PROJECT_STATE.md` selects the mode only; it has no memory-root field.
 
 ## 15. Commit Permissions And Milestone Closure
 

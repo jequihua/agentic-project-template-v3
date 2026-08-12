@@ -5,6 +5,23 @@ The current posture (roots, commands, update rules) lives in
 `05_governance/current/memory_posture.md`. This is an optional lane and follows
 the shared shape in `docs/template_framework/optional_lanes.md`.
 
+## Authority Split
+
+One authority model governs the lane:
+
+- **Mode** comes only from the typed `Memory mode` field in
+  `PROJECT_STATE.md` (`none` / `lightweight` / `llloom`).
+- **Paths** come only from the typed layout fields in `frutlups.layout.yaml`:
+  `optional_lanes.llloom.memory_root` (shipped: `llloom_memory`) and
+  `optional_lanes.llloom.posture_file` (shipped:
+  `05_governance/current/memory_posture.md`).
+- **Filesystem presence is availability only.** A stale or leftover memory
+  directory never activates the lane; a missing directory under an active
+  mode is an unavailability finding, not a trigger to initialize.
+- **Posture prose is never parsed for activation.** `memory_posture.md`
+  mirrors operational posture and status for humans and agents; no consumer
+  reads it to decide whether memory is enabled.
+
 ## Modes
 
 ### none (default)
@@ -37,13 +54,20 @@ Changing `Memory mode` in `PROJECT_STATE.md` is the switch. When it changes:
   location in `memory_posture.md`. No llloom.
 - to `llloom`: activate the `memory` toggle, fill the llloom section of
   `memory_posture.md` (root, install source, read-first pages, last
-  `doctor` / `verify`), and follow the llloom initialization prompts.
+  `doctor` / `verify`), and follow the llloom initialization prompts. The
+  store root is the layout-configured `optional_lanes.llloom.memory_root`;
+  changing it is an atomic layout + posture + docs + tests update.
 
 ## Shared Rules (lightweight and llloom)
 
 - the architect/reviewer initializes and populates memory;
 - the coder defaults to read-only use;
-- memory mutation requires an explicit memory-update slice;
+- memory mutation requires an explicitly assigned memory-update slice or
+  direct human-owner authority;
+- milestone and slice identifiers are routing identifiers only: no identifier
+  (including `M010` or any other milestone name) selects a prompt kind or
+  authorizes a memory mutation; a memory update requires an explicitly
+  assigned memory-update slice or direct human-owner authority;
 - facts or claims used should be cited in self-reports;
 - stale, contradictory, or failing memory should be reported, not hand-patched;
 - memory failures block only when memory is authoritative for the slice.

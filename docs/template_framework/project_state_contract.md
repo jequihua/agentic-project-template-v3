@@ -32,7 +32,11 @@ Two fields take controlled values, enforced by a scaffold test (membership, not 
 fixed value, so a project may legitimately enable a lane):
 
 - `Memory mode`: `none` (default) / `lightweight` / `llloom` — defined in
-  `docs/template_framework/memory_modes.md`.
+  `docs/template_framework/memory_modes.md`. This field is the only memory
+  activation authority. The lane's machine-readable paths (memory root,
+  posture file) come from `optional_lanes.llloom` in `frutlups.layout.yaml`;
+  `PROJECT_STATE.md` deliberately has no memory-root field, so mode and path
+  authority never split across two prose surfaces.
 - `Frutlups mode`: `manual` (default/off) / `semi-manual` / `automated driver` —
   defined in `docs/template_framework/frutlups_modes.md`.
 

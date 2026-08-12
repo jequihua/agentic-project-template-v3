@@ -106,6 +106,7 @@ prompts:
     - "Current State"
     - "Active Workspaces"
     - "Read First"
+    - "Memory Posture"
     - "Task"
     - "Non-Goals"
     - "Verification"
@@ -114,6 +115,7 @@ prompts:
   required_review_prompt_sections:
     - "Review Objective"
     - "Read First"
+    - "Memory Posture"
     - "Review Checks"
     - "Verification"
     - "Output"
@@ -167,6 +169,7 @@ optional_lanes:
   pattern_doc: "docs/template_framework/optional_lanes.md"
   llloom:
     default_mode: "none"
+    memory_root: "llloom_memory"
     posture_file: "05_governance/current/memory_posture.md"
     install_source: null
     install_source_note: "project-specific; do not assume a local path"

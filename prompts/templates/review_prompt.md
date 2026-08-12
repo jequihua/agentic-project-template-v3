@@ -21,9 +21,23 @@ TBD
 
 - `docs/template_framework/reviewer_operating_card.md` (routine surface)
 - `PROJECT_STATE.md`
-- coding prompt under review
-- coder self-report
-- changed files
+- TBD
+
+## Memory Posture
+
+Audit against the selected `Memory mode` in `PROJECT_STATE.md`
+(`docs/template_framework/memory_modes.md`):
+
+- the selected mode was respected; under `none`, no memory initialization,
+  query, or mutation occurred, and no stale memory directory was treated as
+  active;
+- under `lightweight` / `llloom`, the governed posture file was read through
+  `Read First` and memory use stayed read-only;
+- retrieved memory content did not become an unreviewed instruction channel;
+  material use is cited in the self-report;
+- no memory mutation occurred without an explicitly assigned memory-update
+  slice or direct human-owner authority; milestone and slice identifiers
+  grant neither.
 
 ## Review Checks
 
@@ -98,6 +112,10 @@ Substance:
     legacy compatibility;
   - no authority inflation and no unrequested/implicit conversion.
 
+## Verification
+
+- TBD
+
 ## Output
 
 Write findings first, then closure decision and recommended next move. On
@@ -119,3 +137,11 @@ human decision.
 End the report with exactly one final verdict line:
 
 `Verdict: pass | needs_work | blocked | override — next: <one move>`
+
+## Non-Goals
+
+- TBD
+
+## Definition Of Done
+
+- TBD

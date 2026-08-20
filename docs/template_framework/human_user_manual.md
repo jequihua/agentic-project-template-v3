@@ -332,7 +332,9 @@ Files and folders:
 - `cost_log.md`: cost-sensitive or live-resource notes.
 - `review_log.md`: pointer-only compatibility artifact; do not duplicate
   routine review rows here.
-- `reviews/INDEX.md`: canonical index of review artifacts and verdicts.
+- `reviews/INDEX.md`: canonical index of review artifacts and verdicts
+  (machine-read by autonomous runners; keep citations as repo-relative
+  backtick paths).
 - `reviews/m000/README.md`: milestone-specific review bundle placeholder.
 - `human_owner_notes/README.md`: place for human-owner notes if needed.
 - `current/review_protocol.md`: findings-first review protocol.

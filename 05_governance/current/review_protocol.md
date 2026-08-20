@@ -164,6 +164,10 @@ names its frozen version. Append-only history remains the audit trail; the
 closure receipt is the active decision surface, and a live waiver never
 stays off it.
 
-End every review report with exactly one final verdict line:
-
-`Verdict: pass | needs_work | blocked | override — next: <one move>`
+End every review report with a `## Verdict` section whose ATX heading text is
+exactly `Verdict`. Its first non-empty line must be exactly
+`Verdict: <value> - next: <one move>`, where `<value>` is exactly one of
+`pass`, `needs_work`, `blocked`, or `override`. Use one chosen value, never the
+list of choices. Use ASCII space-hyphen-space followed by lowercase `next:`
+and one space; an em dash or en dash is rejected. Put nothing between the
+value and separator, and make the one move non-empty.

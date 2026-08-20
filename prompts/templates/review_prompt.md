@@ -134,9 +134,15 @@ a human or authorized workflow. At a completed roadmap or work-package
 boundary you may instead note pull-request-ready; opening a PR remains a
 human decision.
 
-End the report with exactly one final verdict line:
+Follow the released verdict contract exactly:
 
-`Verdict: pass | needs_work | blocked | override — next: <one move>`
+- End the report with a `## Verdict` section whose ATX heading text is exactly `Verdict`.
+- Make the first non-empty line under that section exactly `Verdict: <value> - next: <one move>`.
+- Choose `<value>` as exactly one of: `pass`, `needs_work`, `blocked`, `override`.
+- Use ASCII space-hyphen-space followed by lowercase `next:` and one space; an em dash or en dash is rejected.
+- Put nothing between `<value>` and the separator: no severity tag, count, or parenthetical.
+- Make `<one move>` non-empty.
+- State one chosen verdict, never the list of verdict choices.
 
 ## Non-Goals
 

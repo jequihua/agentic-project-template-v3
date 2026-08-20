@@ -26,8 +26,13 @@ live-state source — this card copies none of it.
 7. Write findings-first output: confirmed issues by severity; scope
    discipline; verification performed; documentation and governance
    honesty; closure decision; exactly one recommended next move.
-8. End with the single verdict line:
-   `Verdict: pass | needs_work | blocked | override — next: <one move>`.
+8. End with a `## Verdict` section whose ATX heading text is exactly
+   `Verdict`. Its first non-empty line must be exactly
+   `Verdict: <value> - next: <one move>`, where `<value>` is exactly one of
+   `pass`, `needs_work`, `blocked`, or `override`. Use one chosen value, never
+   the list of choices. Use ASCII space-hyphen-space followed by lowercase
+   `next:` and one space; an em dash or en dash is rejected. Put nothing
+   between the value and separator, and make the one move non-empty.
 9. Update `05_governance/reviews/INDEX.md` when the report and verdict
    exist.
 

@@ -80,6 +80,23 @@ automatically. See `docs/template_framework/project_profiles.md`.
 - Do not commit secrets, credentials, raw private data, local venvs, caches, or
   local memory workspaces.
 
+### Autonomous-Loop Seat Posture
+
+When an autonomous driver operates this project, every dispatched seat
+(coder, reviewer, architect) reads this file first. Two rules prevent
+false environmental verdicts and host damage:
+
+- Interpreter posture: Python commands, including the project
+  verification command, use the canonical interpreter named by the
+  project's execution-environment record (`ENVIRONMENT.md`). When the
+  host provides no bare `python` alias, that absence is deliberate
+  explicit-interpreter discipline, not an environmental defect, and
+  does not ground a `blocked` verdict.
+- Stay-in-workspace covers actions, not only files: seats do not kill,
+  restart, or reconfigure host processes, services, or system or global
+  state. A seat that believes such an action is required reports it and
+  stops instead of performing it.
+
 ## Minimal Implementation Discipline
 
 Default to the smallest correct useful change (YAGNI), not mechanically the

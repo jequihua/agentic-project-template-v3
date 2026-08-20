@@ -79,7 +79,14 @@ one accepted change into every routing file.
 | `MILESTONES.md` | update when a milestone is created or closes, not for every slice transition |
 | `05_governance/review_log.md` | no routine duplicate row; pointer-only compatibility surface |
 
-`05_governance/reviews/INDEX.md` is the canonical review routing surface.
+`05_governance/reviews/INDEX.md` is the canonical review routing surface. It
+is also a machine-readable convention: autonomous runners may reconcile its
+rows against project evidence mechanically. Keep one row per review round in
+the documented column shape, and cite every artifact as a repo-relative,
+backtick-quoted path — a citation that is not a backtick-quoted repo-relative
+path is invisible to mechanical reconciliation and weakens the project's
+autonomous reviewability. Manual-first projects that never run an autonomous
+runner are unaffected; nothing else about the INDEX changes.
 `05_governance/review_log.md` remains only as a pointer-only compatibility
 artifact and takes no routine review rows.
 

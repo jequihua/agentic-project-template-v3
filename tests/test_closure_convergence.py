@@ -165,9 +165,11 @@ class ConvergenceContractTests(unittest.TestCase):
                 self.assertNotIn("pass_with_conditions", text)
 
     def test_verdict_line_is_pinned_with_unchanged_vocabulary(self):
-        line = "`Verdict: pass | needs_work | blocked | override — next: <one move>`"
-        self.assertIn(line, self.protocol)
-        self.assertIn(line, _read("prompts/templates/review_prompt.md"))
+        line = "`Verdict: <value> - next: <one move>`"
+        for surface in (self.protocol, _read("prompts/templates/review_prompt.md")):
+            self.assertIn(line, surface)
+            for value in VERDICTS:
+                self.assertIn(f"`{value}`", surface)
 
     def test_plane_vocabulary_membership(self):
         section = _section(self.protocol, "## Convergence And Disposition")
@@ -259,7 +261,7 @@ class ConvergenceContractTests(unittest.TestCase):
         # Load-bearing content: envelope prohibition, verdict line, round scope.
         self.assertIn("may not widen the envelope", text)
         self.assertIn(
-            "`Verdict: pass | needs_work | blocked | override — next: <one move>`",
+            "`Verdict: <value> - next: <one move>`",
             text,
         )
         self.assertIn("previously blocking findings", text)

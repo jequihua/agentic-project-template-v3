@@ -33,6 +33,8 @@ live-state source — this card copies none of it.
    the list of choices. Use ASCII space-hyphen-space followed by lowercase
    `next:` and one space; an em dash or en dash is rejected. Put nothing
    between the value and separator, and make the one move non-empty.
+   One verdict section per file; later rounds use their own
+   round-qualified file.
 9. Human reviewers/architects only: update
    `05_governance/reviews/INDEX.md` when the report and verdict exist.
    Autonomous seats never write the INDEX; in a declared `no-ledger`

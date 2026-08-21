@@ -144,6 +144,11 @@ Follow the released verdict contract exactly:
 - Make `<one move>` non-empty.
 - State one chosen verdict, never the list of verdict choices.
 
+A review report file carries exactly one `## Verdict` section. A later
+round's review goes to its own round-qualified file
+(`..._roundN_review_report.md` or the prompt-declared path); never
+append a second verdict section to an existing report.
+
 ## Non-Goals
 
 - TBD

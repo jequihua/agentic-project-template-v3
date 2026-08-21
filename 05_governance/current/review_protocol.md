@@ -171,3 +171,8 @@ exactly `Verdict`. Its first non-empty line must be exactly
 list of choices. Use ASCII space-hyphen-space followed by lowercase `next:`
 and one space; an em dash or en dash is rejected. Put nothing between the
 value and separator, and make the one move non-empty.
+
+A review report file carries exactly one `## Verdict` section. A later
+round's review goes to its own round-qualified file
+(`..._roundN_review_report.md` or the prompt-declared path); never
+append a second verdict section to an existing report.

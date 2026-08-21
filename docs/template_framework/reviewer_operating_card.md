@@ -10,7 +10,7 @@ live-state source — this card copies none of it.
 2. When the bundle cites repository paths or `test_*` identifiers, run
    `python scripts/artifact_integrity_preflight.py` on the exact artifacts
    before semantic review.
-3. Check the round in the `Round` column of
+3. In human-ledger projects, check the round in the `Round` column of
    `05_governance/reviews/INDEX.md`. On round 2 or later, review only the
    previously blocking findings, the delta, and invalidated evidence.
 4. Judge substance against the acceptance envelope: the prompt's Task,
@@ -33,8 +33,10 @@ live-state source — this card copies none of it.
    the list of choices. Use ASCII space-hyphen-space followed by lowercase
    `next:` and one space; an em dash or en dash is rejected. Put nothing
    between the value and separator, and make the one move non-empty.
-9. Update `05_governance/reviews/INDEX.md` when the report and verdict
-   exist.
+9. Human reviewers/architects only: update
+   `05_governance/reviews/INDEX.md` when the report and verdict exist.
+   Autonomous seats never write the INDEX; in a declared `no-ledger`
+   project it stays empty by design.
 
 ## Hard rules
 

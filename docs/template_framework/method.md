@@ -87,6 +87,17 @@ backtick-quoted path — a citation that is not a backtick-quoted repo-relative
 path is invisible to mechanical reconciliation and weakens the project's
 autonomous reviewability. Manual-first projects that never run an autonomous
 runner are unaffected; nothing else about the INDEX changes.
+
+The INDEX additionally operates in a declared mode, in the same spirit as
+Memory mode and Frutlups mode. `human-ledger` (the default): a person
+maintains the rows and everything above applies as written. `no-ledger`: the
+project is operated by an autonomous runner, nobody maintains rows, the file
+legitimately remains at its shipped header-only state, and mechanical
+reconciliation treats any row that appears as an anomaly rather than
+bookkeeping. The declaration lives in the operating tool's project-local
+configuration (for frutlups-drive, `index_mode` in the committed drive
+policy); manual-first projects declare nothing and are unaffected.
+
 `05_governance/review_log.md` remains only as a pointer-only compatibility
 artifact and takes no routine review rows.
 

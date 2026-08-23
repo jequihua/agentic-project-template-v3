@@ -96,7 +96,9 @@ legitimately remains at its shipped header-only state, and mechanical
 reconciliation treats any row that appears as an anomaly rather than
 bookkeeping. The declaration lives in the operating tool's project-local
 configuration (for frutlups-drive, `index_mode` in the committed drive
-policy); manual-first projects declare nothing and are unaffected.
+policy); manual-first projects declare nothing and are unaffected. The
+scaffold ships the INDEX header-only; the first data row is always project
+history, never template content.
 
 `05_governance/review_log.md` remains only as a pointer-only compatibility
 artifact and takes no routine review rows.

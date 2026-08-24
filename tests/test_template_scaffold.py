@@ -802,9 +802,11 @@ class TemplateScaffoldTests(unittest.TestCase):
             with self.subTest(manual=label):
                 self.assertIn(anchor, guidance, f"manual guidance lost: {label}")
 
-        # The automated-driver section is future/specification-only, binds the
-        # five accepted outcomes to the right behavior, and no longer offers a
-        # generic "no frontier" as a sufficient stop or completion contract.
+        # The automated-driver section keeps the boundary specification-only
+        # and runner-neutral (a conforming external runner may exist, but the
+        # template ships none and depends on none), binds the five accepted
+        # outcomes to the right behavior, and no longer offers a generic
+        # "no frontier" as a sufficient stop or completion contract.
         driver = self._section_outside_fences(manual, "### Automated Driver Mode")
         self.assertTrue(driver.strip(), "manual has no automated-driver section")
         self.assertNotIn(
@@ -828,9 +830,11 @@ class TemplateScaffoldTests(unittest.TestCase):
                     f"`{state}` is not bound to its accepted operator behavior",
                 )
         for label, anchor in (
-            ("specification-only", "future, specification-only interface"),
-            ("not implemented anywhere",
-             "not implemented here, in frutlups, or"),
+            ("specification-only", "specification-only and runner-neutral"),
+            ("template ships no runner",
+             "No runner ships with this template"),
+            ("boundary conformance named",
+             "any runner honoring the normative boundary"),
             ("empty frontier and retries", "never imply completion"),
             ("versioned state, not prose", "instead of parsing roadmap prose"),
             ("no fog graduation", "must not graduate `Not Yet Specified`"),
@@ -845,12 +849,12 @@ class TemplateScaffoldTests(unittest.TestCase):
                 self.assertIn(anchor, driver, f"automated-driver guidance lost: {label}")
 
         # The new guidance stays advisory: both surfaces state optionality, and
-        # the future-only section ships no command for behavior that does not
-        # exist.
+        # the runner-neutral section ships no runner commands — those live in
+        # a runner's own operator manual, outside this template.
         self.assertIn("Neither is required", entry)
         self.assertIn("neither is required", guidance)
         self.assertNotIn(
-            "```", driver, "the future-only driver section must not ship commands"
+            "```", driver, "the driver section must not ship runner commands"
         )
 
     def test_no_scaffold_test_requires_frutlups(self) -> None:

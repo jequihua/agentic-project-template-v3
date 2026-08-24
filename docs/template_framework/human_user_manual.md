@@ -884,9 +884,14 @@ review happened.
 
 `Frutlups mode: automated driver`
 
-This is a future, specification-only interface. No runner ships with this
-template, and the typed outcomes below are not implemented here, in frutlups, or
-in any runner today. A thin local runner may:
+The interface between the template and any runner remains
+specification-only and runner-neutral in this template.
+No runner ships with this template. A conforming external runner now
+exists — frutlups-drive, published as its own repository — which implements
+the typed outcomes below and has driven complete projects autonomously; this
+template does not depend on it, and
+any runner honoring the normative boundary may sit in its place.
+A thin runner may:
 
 - consume `frutlups status --json`;
 - route prompt files to configured agents;
@@ -896,7 +901,7 @@ in any runner today. A thin local runner may:
 - stop on gates;
 - report commit-ready or pull-request-ready.
 
-When that runner exists it should act on typed planning outcomes:
+A conforming runner acts on typed planning outcomes:
 
 - `ready`: continue the declared loop;
 - `needs_specification`: run one bounded architect planning turn, then recompute
@@ -905,7 +910,7 @@ When that runner exists it should act on typed planning outcomes:
 - `complete`: succeed only when explicit accepted completion evidence exists;
 - `invalid` or an unknown outcome: stop fail-closed with diagnostics.
 
-Also true of that future runner:
+Also true of any conforming runner:
 
 - an empty frontier and retry exhaustion never imply completion;
 - it consumes versioned frutlups state instead of parsing roadmap prose;
@@ -918,7 +923,33 @@ The runner must also stop on a blocked verdict, a required override, an invalid
 self-report, an invalid review report, a memory gate failure, or an environment
 gate failure.
 
-The normative future boundary is
+Initializing a project for fully autonomous work (proven by the first
+published runner's live campaigns; runner commands live in the runner's own
+operator manual, not here):
+
+- declare `Frutlups mode: automated driver`, and — for a project where no
+  human keeps ledgers — declare the no-ledger index mode in the runner's
+  committed policy: the reviews INDEX then legitimately stays at its shipped
+  header-only state, and any data row that appears is treated as an anomaly,
+  never as bookkeeping;
+- declare seat models, budgets, and corrective efforts (one rung above each
+  seat's default, drawn from a fail-closed catalog fixed at initialization)
+  identically in the committed policy and the human-approved live gate; the
+  run starts only on the human owner's explicit launch word;
+- keep machine-local bindings (provider CLIs, the planning tool, the optional
+  memory tool) in ignored local state, written without a byte-order mark,
+  each tool in its own isolated environment the runner reaches only through
+  declared subprocess boundaries;
+- review reports carry exactly one verdict section per file, and later rounds
+  use their own round-qualified files — the released planning tool refuses an
+  ambiguous multi-verdict file rather than silently resolving it;
+- expect governed self-recovery and governed stops, not silent failure: a
+  seat that completes without delivering its declared artifacts is waited
+  out and re-dispatched once at the corrective effort, and unresolvable
+  situations stop fail-closed with a typed reason and an escalation document
+  for the human.
+
+The normative boundary is
 `docs/template_framework/frutlups_driver_boundary.md`.
 
 ## 14. llloom Memory
@@ -962,6 +993,22 @@ Coder:
 - reports stale or contradictory memory;
 - does not mutate memory unless explicitly assigned a memory-update slice or
   acting under direct human-owner authority.
+
+### Populated Roots In The Autonomous Loop
+
+When an autonomous runner drives a project with `Memory mode: llloom` over a
+populated root (proven live by the first published runner's campaigns):
+
+- the root is authored before launch through llloom's own released verbs from
+  a seed manifest of locator-anchored claims; pages need their commentary
+  pairs, and an interrupted apply is recovered with llloom's own dead-owner
+  unlock, never by hand-editing the root;
+- the runner injects bounded, read-only memory context per dispatch under
+  declaration authority; health checks fail closed; memory never gains
+  control flow;
+- at run boundaries the runner may submit a governed update proposal to the
+  llloom review queue; nothing is ever applied to the root by a machine —
+  applying updates remains a human or architect decision.
 
 ### Installation Reminder
 

@@ -122,8 +122,9 @@ The coding agent implements the active prompt. This role:
 ### Optional Tooling
 
 frutlups may help read loop state, generate prompts, validate reports, record
-verdicts, and resume work. A future thin runner may automate handoffs. llloom may
-provide durable source-grounded memory. Neither is required by default.
+verdicts, and resume work. A conforming external runner may automate handoffs;
+the template ships none. llloom may provide durable source-grounded memory.
+Neither is required by default.
 
 ## 4. Source Of Truth Order
 
@@ -449,7 +450,8 @@ Important files:
 - `optional_lanes.md`: how memory and frutlups stay optional.
 - `memory_modes.md`: `none`, `lightweight`, and `llloom`.
 - `frutlups_modes.md`: `manual`, `semi-manual`, and `automated driver`.
-- `frutlups_driver_boundary.md`: what a future thin runner may and must not do.
+- `frutlups_driver_boundary.md`: what a conforming thin runner may and must not
+  do; the template ships no runner.
 - `migration_and_adoption.md`: how to adopt v3 in new or existing projects.
 - `security_and_local_state.md`: secret and local-state policy.
 - `front_repo_sync.md`: development repo to front-facing repo publication

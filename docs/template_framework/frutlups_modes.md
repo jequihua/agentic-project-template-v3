@@ -32,8 +32,8 @@ progress.
 
 ### automated driver
 
-A future thin local runner may coordinate the loop. It is a specification
-boundary, not part of this scaffold — see
+A conforming external runner may coordinate the loop. The template ships none
+and defines only the specification boundary — see
 `docs/template_framework/frutlups_driver_boundary.md`. frutlups owns durable
 state, validation, gates, deterministic prompts, and resumability; the runner
 stays thin.
@@ -46,7 +46,8 @@ Changing `Frutlups mode` in `PROJECT_STATE.md` is the switch. When it changes:
 - to `semi-manual`: enable frutlups per the init prompts, record posture in
   `frutlups_posture.md`, use read-only commands for orientation and write
   commands (with `--dry-run`) for prompts and verdicts.
-- to `automated driver`: only after a runner exists; until then treat it as
+- to `automated driver`: only with a conforming external runner installed and
+  its operator manual as the runner authority; without one, treat it as
   `semi-manual` plus the boundary spec.
 
 ## Rules (all modes)

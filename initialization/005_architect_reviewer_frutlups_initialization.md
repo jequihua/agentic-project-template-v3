@@ -66,5 +66,6 @@ frontier.
 
 ## Thin Driver Direction
 
-A future runner is a specification boundary only, not part of this scaffold. See
+Any runner is external: this scaffold ships none and defines only the
+specification boundary a conforming runner must honor. See
 `docs/template_framework/frutlups_driver_boundary.md`.

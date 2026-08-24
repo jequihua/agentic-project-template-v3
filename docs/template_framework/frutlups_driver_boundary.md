@@ -1,9 +1,10 @@
 # Frutlups Driver Boundary
 
-Status: specification boundary only. No runner is implemented in this template,
-and this pass does not implement one.
+Status: specification boundary only. No runner is implemented in this template;
+conforming external runners exist (frutlups-drive is the first published one)
+and any runner honoring this boundary may sit in its place.
 
-A future thin local runner MAY:
+A conforming thin runner MAY:
 
 - consume `frutlups status --json`;
 - route generated prompt files to configured sinks;

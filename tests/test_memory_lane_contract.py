@@ -17,6 +17,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Clone-only integrity checks: they protect the template as shipped and are
+# scoped by the scaffold's own Status line, so a populated project reports them
+# as skipped, never as failures.
+SCAFFOLD_STATUS = "initialized template scaffold"
+
+
+def _is_fresh_scaffold(state_path: Path = ROOT / "PROJECT_STATE.md") -> bool:
+    """True only while PROJECT_STATE.md still carries the shipped Status."""
+    for line in state_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("Status:"):
+            return line.split(":", 1)[1].strip() == SCAFFOLD_STATUS
+    return False
+
+
+_CLONE_ONLY = unittest.skipUnless(
+    _is_fresh_scaffold(),
+    "clone-only integrity check: PROJECT_STATE.md Status is no longer the shipped scaffold",
+)
+
 LAYOUT = ROOT / "frutlups.layout.yaml"
 STATE = ROOT / "PROJECT_STATE.md"
 CODING_TEMPLATE = ROOT / "prompts" / "templates" / "coding_prompt.md"
@@ -111,6 +130,7 @@ class MemoryLaneLayoutContractTests(unittest.TestCase):
         self.assertIn(f'memory_posture: "{FROZEN_POSTURE_FILE}"', text)
         self.assertTrue((ROOT / FROZEN_POSTURE_FILE).is_file())
 
+    @_CLONE_ONLY
     def test_project_state_default_memory_mode_is_none(self) -> None:
         lines = [line.strip() for line in _read(STATE).splitlines()]
         index = lines.index("Memory mode:")

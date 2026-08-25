@@ -39,6 +39,21 @@ Test structural invariants and contracts, not prose:
   hard-assert `Memory mode: none`); assert membership in the allowed set instead,
   so the test stays downstream-safe.
 
+## Clone-Only Tests
+
+A few checks protect the template as shipped, not a project built from it:
+the shipped `Memory mode: none` default, the absence of this development
+machine's local paths anywhere in the tree, and the binary-safe LF state of
+every distributable text file. A populated project legitimately changes all
+three (it picks a memory mode; it imports byte-preserved corpora). These
+tests are therefore scoped by the scaffold's own `Status` line: they run
+while `PROJECT_STATE.md` still says `Status: initialized template scaffold`
+and report as skipped, never as failures, once framework initialization
+replaces it. Project invariants that must hold forever (no machine-local
+paths in reviewed artifacts, for example) are the artifact preflight's job
+and stay unconditional. A project that never changes `Status` keeps the
+clone-only checks active.
+
 ## Optional Tools Must Not Be Imported
 
 The suite must run without llloom or frutlups installed. A shared helper checks

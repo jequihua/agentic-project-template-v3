@@ -1233,7 +1233,10 @@ The tests check structural invariants such as:
 - prompt self-report schema stays aligned;
 - frutlups layout config remains portable;
 - commit and PR policies are encoded;
-- front-repo sync safety rails exist and behave.
+- front-repo sync safety rails exist and behave;
+- clone-only checks (shipped memory default, no machine-local paths, LF
+  hygiene) run while `Status` is still the scaffold default and skip once
+  the project is initialized.
 
 Tests do not replace human review. Reviews should still perform adversarial
 checks when a safety rail matters.

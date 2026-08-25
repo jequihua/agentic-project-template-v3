@@ -15,6 +15,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Clone-only integrity checks: they protect the template as shipped and are
+# scoped by the scaffold's own Status line, so a populated project reports them
+# as skipped, never as failures.
+SCAFFOLD_STATUS = "initialized template scaffold"
+
+
+def _is_fresh_scaffold(state_path: Path = ROOT / "PROJECT_STATE.md") -> bool:
+    """True only while PROJECT_STATE.md still carries the shipped Status."""
+    for line in state_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("Status:"):
+            return line.split(":", 1)[1].strip() == SCAFFOLD_STATUS
+    return False
+
+
+_CLONE_ONLY = unittest.skipUnless(
+    _is_fresh_scaffold(),
+    "clone-only integrity check: PROJECT_STATE.md Status is no longer the shipped scaffold",
+)
+
 # The development release-projection manifest's exact `[ignore].globs`, matched by the
 # same `fnmatch.fnmatch` primitive the projection engine uses (IgnoreRules.should_skip),
 # so platform case normalization is identical on every OS (case-insensitive on Windows).
@@ -535,6 +554,7 @@ class TemplateScaffoldTests(unittest.TestCase):
         self.assertIn("install/source reference", text)
         self.assertIn("guide", text)
 
+    @_CLONE_ONLY
     def test_template_has_no_machine_local_paths(self) -> None:
         """A GitHub template clone must not inherit this development machine's
         local paths or repository names."""
@@ -556,6 +576,22 @@ class TemplateScaffoldTests(unittest.TestCase):
                 continue
             for fragment in forbidden:
                 self.assertNotIn(fragment, text, f"{path} contains {fragment}")
+
+    def test_clone_only_scope_follows_project_state_status(self) -> None:
+        """Clone-only integrity checks run while PROJECT_STATE.md still carries
+        the shipped Status and skip (never fail) once a project replaces it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "PROJECT_STATE.md"
+            state.write_text(
+                f"# Project State\n\nStatus: {SCAFFOLD_STATUS}\n", encoding="utf-8"
+            )
+            self.assertTrue(_is_fresh_scaffold(state))
+            state.write_text(
+                "# Project State\n\nStatus: campaign running\n", encoding="utf-8"
+            )
+            self.assertFalse(_is_fresh_scaffold(state))
+            state.write_text("# Project State\n\nTemplate version: v3\n", encoding="utf-8")
+            self.assertFalse(_is_fresh_scaffold(state))
 
     def test_frutlups_driver_boundary_is_spec_only(self) -> None:
         """The driver boundary must stay a specification, not an implementation."""
@@ -1789,6 +1825,7 @@ class TemplateScaffoldTests(unittest.TestCase):
                 f"{context} status is neither active nor inactive",
             )
 
+    @_CLONE_ONLY
     def test_standalone_gitattributes_enforces_binary_safe_lf(self) -> None:
         # When this template becomes the root of its own Git repository, its .gitattributes
         # must enforce a binary-safe LF checkout for the whole tree so the release bytes are

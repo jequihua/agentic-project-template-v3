@@ -24,7 +24,9 @@ directions by `tests/test_slice_contract.py`, and the reference checker
 - The typed source is a **sidecar YAML beside each selected prose roadmap**,
   named `<roadmap-stem>` + the layout's `sidecar_suffix` (`.slices.yaml`).
   The prose roadmap stays the human narrative and is untouched; the sidecar's
-  `roadmap` key names it and must resolve to a file beside the sidecar.
+  `roadmap` key names it and must resolve to an ordinary regular file beside
+  the sidecar — not a symlink or junction, and its strictly resolved parent is
+  the sidecar's own directory.
 - **Absent sidecar = legacy v3 semantics byte-for-byte.** Nothing about a
   project without a sidecar changes.
 - **Opt-in is one reviewed migration step** with exactly two effects: add the
@@ -253,14 +255,54 @@ dispatchable.
 
 One scaffold per regime. The legacy scaffold is unchanged. The v1 scaffold
 `prompts/templates/coding_prompt_contract_v1.md` carries typed slots. The
-rendering rule is structural: **every scalar leaf of the entry appears
-verbatim in its mapped section** (attempt tokens resolved; nested `none`
-values rendered as `none`; not-applicable groups rendered as an absent
-section), no slot token, sentinel, or residue survives, and every write
-manifest row carries its resolved path, artifact type, role owner, and
-retry policy on one line. The reference checker enforces exactly that, and
-the suite proves that removing any leaf's text from a canonical rendering is
-detected.
+rendered prompt is a **keyed grammar**: every typed field has one rendered
+position, and losslessness means the value extracted from that position
+equals the entry's value (attempt tokens resolved) — never that the text
+appears somewhere. Label text, allowed-value hints, duplicated text, or a
+cross-section occurrence can never stand in for a field's value. The
+reference checker parses the rendering field by field and compares by
+equality; the suite proves that overwriting only a field's value span (labels
+and every other occurrence untouched) is detected for every field of every
+canonical rendering.
+
+The grammar:
+
+- workflow metadata: `key: value` lines in the first fenced block (the
+  `attempt` value may be quoted; `attempt` and `dispatch_authority` lines are
+  absent when the entry has none);
+- exact bullet lists (`- value`, a backticked value stripped of its ticks) for
+  Active Workspaces, Read First, Non-Goals, Definition Of Done, and the two
+  Objective And Closure Proof lists (`Success criteria:` then `Closure proof
+  the review will look for:`); a list carries exactly the entry's items in
+  order — an extra or missing item is a defect;
+- Verification: the entry's values are the leading bullets, before the
+  scaffold's static verification bullets;
+- Task: the section body equals the entry's task text;
+- tables: Write Manifest rows `| path | artifact_type | role_owner |
+  retry_policy |` (resolved path), External Repositories rows `| repository |
+  role | path | identity |`, Correction Scope Map finding rows `| id |
+  violated_invariant | prior_disposition | authority_action | coder_obligation
+  | closure_proof |`, each in entry order;
+- Opening Gates bullets `- kind: reference`, then ` (sha256 H)` for
+  `artifact_identity`, then ` (repository R, tag T, commit C)` for
+  `pinned_external_release`;
+- labeled bullets (`- Label: value`) for Candidate Identity (`Identity
+  strategy (file / manifest / git)`, `Identity value recorded at freeze`) and
+  the Execution Envelope (`Timing probe: `command` (expected N s)`,
+  `Agent/model budget: N s`, `Scientific subprocess budget: N s`,
+  `Expected wall: N s; hard wall: M s`, `Frozen override: none` or
+  `authority `path``, `Retained bytes max: N`, `Local output root: `path``,
+  `Cleanup`, `Negative result handling`, `Stopped result handling`) and the
+  correction bullets (`Controlling ruling: `path`` or `disputed; see `path``);
+- list-valued labeled fields (`Prior evidence identities` as `` `path` sha256
+  H``, `Required closure proof`, `Claims withdrawn or narrowed`, `Evidence
+  invalidated`, `Minimum rerun set`, `Candidate paths`, `Environment bindings
+  (name and value hash only; values live in the runner's policy)` as `NAME
+  sha256 H`, `Identities (arm / group / order / attempt)`) render `none`
+  inline or one nested `  - item` line per value;
+- the Self-Report path is the section's backticked path line;
+- no slot token, sentinel, or conditional-marker residue survives; a
+  not-applicable group has no section.
 
 | Typed field | Rendered location |
 | --- | --- |
@@ -405,12 +447,16 @@ are scanned by their own tests instead (`docs/template_framework/template_tests.
   exclusion manifest at the layout's recommended path
   (`local_state.oracle_exclusion_manifest`) is the single machine-read
   exclusion source, and the template's pre-launch check reads it with the
-  drive's own grammar and refuses anything the drive would refuse; the
-  command is the layout's `local_state.prelaunch_size_check`
+  drive's own grammar — the declared reference is validated unmodified before
+  any filesystem access, a declared-but-missing or linked file refuses, and
+  only an omitted `--exclusions` flag means none declared — so it refuses
+  anything the drive would refuse; the command is the layout's
+  `local_state.prelaunch_size_check`
   (`docs/template_framework/security_and_local_state.md`):
 
   ```text
   python scripts/local_state_audit.py --limit-bytes 16777216 --exclusions 06_infra/oracle_exclusion_manifest.json
+  python scripts/local_state_audit.py --limit-bytes 16777216   # no manifest declared
   ```
 
 - Placeholders and dispatch: `docs/template_framework/prompt_style_guide.md`.

@@ -124,20 +124,25 @@ activity is never a gate (`docs/template_framework/external_repository_roles.md`
 | AL2-F1 | a no-ledger project carries no ledger row | open | owner note 003 authorizes exactly one bounded replay | re-acquire the ledger under the frozen envelope and cite the rows | nine admitted rows per arm in joined_ledger.json |
 
 - Controlling ruling: `05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md`
-- Prior evidence identities: `01_data/evidence/m002_s02_holistic_pass_001/partial_ledger.json` sha256 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
-- Required closure proof: Nine admitted rows per arm, or a preserved partial stop with the exact Java exception
+- Prior evidence identities:
+  - `01_data/evidence/m002_s02_holistic_pass_001/partial_ledger.json` sha256 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
+- Required closure proof:
+  - Nine admitted rows per arm, or a preserved partial stop with the exact Java exception
 - Allowed files and claims: exactly the write manifest above (derived; no
   separate typed field).
 - Claims withdrawn or narrowed: none
-- Evidence invalidated: the attempt-001 partial ledger is superseded, not deleted
-- Minimum rerun set: the nine-case paired replay
+- Evidence invalidated:
+  - the attempt-001 partial ledger is superseded, not deleted
+- Minimum rerun set:
+  - the nine-case paired replay
 
 ## Candidate Identity
 
 candidate* (`docs/template_framework/candidate_review_acceptance.md`).
 
 - Identity strategy (file / manifest / git): file
-- Candidate paths: `graphab_optimization_kit/runtime/jars/graphab.jar`
+- Candidate paths:
+  - `graphab_optimization_kit/runtime/jars/graphab.jar`
 - Identity value recorded at freeze: 8830e486f5fdd1a9818d0db08976fa9bdb541cb93b4010bb85aaa57df3221456
 - Review and acceptance records land outside the candidate.
 
@@ -153,9 +158,12 @@ exceeding them is refused at admission, never silently overridden.
 - Scientific subprocess budget: 5400 s
 - Expected wall: 3600 s; hard wall: 7200 s
 - Frozen override: authority `05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md`
-- Environment bindings (name and value hash only; values live in the
-  runner's policy): JAVA_TOOL_OPTIONS sha256 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
-- Identities (arm / group / order / attempt): arm:baseline, arm:candidate, order:baseline-first
+- Environment bindings (name and value hash only; values live in the runner's policy):
+  - JAVA_TOOL_OPTIONS sha256 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
+- Identities (arm / group / order / attempt):
+  - arm:baseline
+  - arm:candidate
+  - order:baseline-first
 - Retained bytes max: 536870912
 - Local output root: `local_state/m002_s02_attempt_002/`
 - Cleanup: quarantine

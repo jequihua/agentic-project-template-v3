@@ -9,7 +9,12 @@ write. Sections marked *conditional* are removed entirely, marker line
 included, when the typed field is `none` or the flag is false — never left as
 placeholders. The metadata `attempt` and `dispatch_authority` lines are
 removed when the entry declares no attempt or no dispatch authority (a
-frozen entry). This preamble is scaffold documentation and is not rendered. The
+frozen entry). A list-valued labeled field (prior evidence, closure proof,
+claims withdrawn, evidence invalidated, minimum rerun set, candidate paths,
+environment bindings, identities) renders `none` inline or one nested
+`  - item` line per value; a rendered prompt is a keyed grammar the
+reference checker parses field by field (contract section 8). This
+preamble is scaffold documentation and is not rendered. The
 legacy scaffold `prompts/templates/coding_prompt.md` is unchanged and remains
 the configured template for projects that have not opted in.
 
@@ -129,13 +134,16 @@ activity is never a gate (`docs/template_framework/external_repository_roles.md`
 | TBD:correction_rows |
 
 - Controlling ruling: TBD:controlling_ruling
-- Prior evidence identities: TBD:prior_evidence
-- Required closure proof: TBD:correction_closure_proof
+- Prior evidence identities:
+  - TBD:prior_evidence
+- Required closure proof:
+  - TBD:correction_closure_proof
 - Allowed files and claims: exactly the write manifest above (derived; no
   separate typed field).
 - Claims withdrawn or narrowed: TBD:claims_withdrawn
 - Evidence invalidated: TBD:evidence_invalidated
-- Minimum rerun set: TBD:minimum_rerun_set
+- Minimum rerun set:
+  - TBD:minimum_rerun_set
 
 ## Candidate Identity
 
@@ -143,7 +151,8 @@ activity is never a gate (`docs/template_framework/external_repository_roles.md`
 candidate* (`docs/template_framework/candidate_review_acceptance.md`).
 
 - Identity strategy (file / manifest / git): TBD:candidate_strategy
-- Candidate paths: TBD:candidate_paths
+- Candidate paths:
+  - TBD:candidate_paths
 - Identity value recorded at freeze: TBD:candidate_identity_value
 - Review and acceptance records land outside the candidate.
 
@@ -160,8 +169,7 @@ exceeding them is refused at admission, never silently overridden.
 - Scientific subprocess budget: TBD:subprocess_budget_seconds s
 - Expected wall: TBD:expected_wall_seconds s; hard wall: TBD:hard_wall_seconds s
 - Frozen override: TBD:frozen_override
-- Environment bindings (name and value hash only; values live in the
-  runner's policy): TBD:environment_bindings
+- Environment bindings (name and value hash only; values live in the runner's policy): TBD:environment_bindings
 - Identities (arm / group / order / attempt): TBD:identities
 - Retained bytes max: TBD:retained_bytes_max
 - Local output root: TBD:local_output_root

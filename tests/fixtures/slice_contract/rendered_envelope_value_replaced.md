@@ -166,7 +166,7 @@ exceeding them is refused at admission, never silently overridden.
   - order:baseline-first
 - Retained bytes max: 536870912
 - Local output root: `local_state/m002_s02_attempt_002/`
-- Cleanup: quarantine
+- Cleanup: retain_until_closure
 - Negative result handling: preserve_and_stop
 - Stopped result handling: preserve_and_stop
 

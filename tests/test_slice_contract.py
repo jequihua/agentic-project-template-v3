@@ -321,7 +321,12 @@ class SliceContractCheckerTests(unittest.TestCase):
 
     # --- structural losslessness: removing any leaf from a canonical rendering is detected
 
-    def test_removing_any_leaf_from_a_canonical_rendering_is_detected(self) -> None:
+    def test_every_extracted_field_is_bound_to_its_rendered_position(self) -> None:
+        """Field-bound losslessness: for every field the parser extracts from a
+        canonical rendering, overwriting ONLY that value's span (labels, allowed-
+        value hints, headings, and every other occurrence untouched) is detected.
+        The reviewer's round-2 probe (`file` -> `OMITTED` while the label hint
+        still says `file`) is the first case of this class."""
         cases = (
             (self.positive, "M001-S01", "all_fields_rendered_m001_s01.md"),
             (self.positive, "M002-S02", "all_fields_rendered_m002_s02_attempt_002.md"),
@@ -331,21 +336,72 @@ class SliceContractCheckerTests(unittest.TestCase):
         for doc, slice_id, name in cases:
             entry = next(s for s in doc["slices"] if s["slice"] == slice_id)
             rendered = (FIX_ROOT / name).read_text(encoding="utf-8")
-            attempt = entry.get("attempt")
             self.assertEqual(self.check.check_rendered(doc, slice_id, None, rendered, name, self.layout), [])
-            for path, leaf in self.check.iter_leaves(entry):
-                if entry.get(path[0]) == "none" and len(path) == 1:
+            _order, _bodies, fields = self.check.extract_rendered(rendered)
+            expected = self.check.expected_fields(entry, token)
+            typed = {p for p in fields if p == ("self_report_path",) or p[0] in self.check.FIELD_SECTIONS}
+            self.assertEqual(set(expected), typed, f"{name}: extracted fields differ from the entry's leaves")
+            lines = rendered.split("\n")
+            for path in expected:
+                found = fields[path]
+                if path == ("task",):
                     continue
-                text = self.check.resolve_attempt(self.check._leaf_text(leaf), token, attempt)
-                if not text.strip() or len(text) < 3:
-                    continue
-                if path[0] == "task":
-                    text = text.strip().splitlines()[0].strip()
-                with self.subTest(fixture=name, leaf=".".join(map(str, path))):
-                    self.assertIn(text, rendered, "canonical rendering lacks the leaf itself")
-                    mutated = rendered.replace(text, "REMOVED")
-                    diags = self.check.check_rendered(doc, slice_id, None, mutated, name, self.layout)
-                    self.assertTrue(diags, f"removing {path} from the rendering went undetected")
+                with self.subTest(fixture=name, field=".".join(path)):
+                    line = lines[found.line]
+                    self.assertEqual(line[found.start:found.end], found.value, "span does not cover the value")
+                    lines2 = list(lines)
+                    lines2[found.line] = line[:found.start] + "OMITTED" + line[found.end:]
+                    diags = self.check.check_rendered(doc, slice_id, None, "\n".join(lines2), name, self.layout)
+                    self.assertTrue(diags, f"overwriting only the value of {path} went undetected")
+            # task: overwriting the task body alone is detected
+            task_line = fields[("task",)].line
+            lines3 = list(lines)
+            lines3[task_line] = "OMITTED"
+            self.assertTrue(self.check.check_rendered(doc, slice_id, None, "\n".join(lines3), name, self.layout))
+
+    def test_reviewers_round2_field_only_probe_refuses(self) -> None:
+        rendered = (FIX_ROOT / "all_fields_rendered_m002_s02_attempt_002.md").read_text(encoding="utf-8")
+        mutated = rendered.replace("- Identity strategy (file / manifest / git): file", "- Identity strategy (file / manifest / git): OMITTED")
+        self.assertNotEqual(mutated, rendered)
+        codes = {d.code for d in self.check.check_rendered(self.positive, "M002-S02", None, mutated, "x", self.layout)}
+        self.assertIn("rendered_value_missing", codes)
+
+    def test_fence_reader_handles_commonmark_forms(self) -> None:
+        text = "a\n~~~text\nObjective status: x\n~~~\nb\n````\n```\nstill fenced\n````\nc\n   ```\n   indented\n   ```\nd\n"
+        states = [fenced for _l, fenced in self.check.fenced_lines(text)]
+        self.assertEqual(states, [False, True, True, True, False, True, True, True, True, False, True, True, True, False])
+        report = (FIX_ROOT / "review_report_closure_valid.md").read_text(encoding="utf-8")
+        with_tilde = report.replace("## Closure Decision", "~~~text\nObjective status: not_achieved\nObjective evidence: example only\n~~~\n\n## Closure Decision")
+        self.assertEqual(self.check.check_review_report(with_tilde, "x", self.layout), [])
+
+    def test_roadmap_link_must_be_an_ordinary_adjacent_file(self) -> None:
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "elsewhere").mkdir()
+            outside = root / "elsewhere" / "roadmap.md"
+            outside.write_text("# elsewhere\n", encoding="utf-8")
+            beside = root / "active_roadmap.md"
+            shutil.copyfile(FIX_ROOT / "all_fields.slices.yaml", root / "all_fields.slices.yaml")
+            try:
+                os.symlink(outside, beside)
+            except (OSError, NotImplementedError):
+                self.skipTest("external evidence: file symlink creation is not permitted on this seat")
+            codes = {d.code for d in self.check.validate_sidecar(self.positive, "x", self.layout, sidecar_path=root / "all_fields.slices.yaml")}
+            self.assertIn("roadmap_link_unresolved", codes)
+
+    def test_roadmap_directory_junction_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "target_dir").mkdir()
+            link = root / "active_roadmap.md"
+            proc = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(root / "target_dir")], capture_output=True, text=True)
+            if proc.returncode != 0 or not link.exists():
+                self.skipTest("external evidence: junction creation unavailable on this seat")
+            import shutil
+            shutil.copyfile(FIX_ROOT / "all_fields.slices.yaml", root / "all_fields.slices.yaml")
+            codes = {d.code for d in self.check.validate_sidecar(self.positive, "x", self.layout, sidecar_path=root / "all_fields.slices.yaml")}
+            self.assertIn("roadmap_link_unresolved", codes)
 
     def test_confirming_a_different_attempt_is_refused(self) -> None:
         rendered = (FIX_ROOT / "all_fields_rendered_m002_s02_attempt_002.md").read_text(encoding="utf-8")
@@ -532,6 +588,49 @@ class PrelaunchAuditManifestTests(unittest.TestCase):
             self.assertEqual(code, 0)
             code, _ = self._run(root, self._manifest(root, {"contract_version": 1, "exact_paths": [], "top_level_prefixes": ["big/"]}))
             self.assertEqual(code, 0)
+
+    def test_manifest_reference_parity_with_the_drive(self) -> None:
+        """The reviewer's round-2 parity probes: the declared reference is validated
+        unmodified before any filesystem access, a declared-but-missing file refuses,
+        and only an omitted flag means none declared."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._root(tmp)
+            valid = {"contract_version": 1, "exact_paths": ["big/huge.bin"], "top_level_prefixes": []}
+            self._manifest(root, valid)
+            for label, reference in (
+                ("parent traversal to an absent file", "../absent.json"),
+                ("backslash reference to a valid manifest", "06_infra\\oracle_exclusion_manifest.json"),
+                ("declared but missing", "06_infra/absent.json"),
+                ("trailing slash", "06_infra/"),
+                ("governed top level", "local_state/manifest.json"),
+            ):
+                with self.subTest(case=label):
+                    code, out = self._run(root, reference)
+                    self.assertEqual(code, 1, out)
+                    self.assertIn("exclusion manifest invalid", out)
+                    self.assertIn("nothing was excluded", out)
+            code, out = self._run(root, "06_infra/oracle_exclusion_manifest.json")
+            self.assertEqual(code, 0, out)
+            code, out = self._run(root, None)
+            self.assertEqual(code, 1)
+            self.assertIn("none declared", out)
+
+    def test_manifest_reference_through_an_escaping_junction_is_refused(self) -> None:
+        """Drive parity: strict resolution must stay under the strictly resolved
+        root, so a reference that resolves outside through a junction refuses
+        (an in-root junction resolves inside and is accepted by both)."""
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as outside_tmp:
+            root = self._root(tmp)
+            outside = Path(outside_tmp)
+            (outside / "m.json").write_text(json.dumps({"contract_version": 1, "exact_paths": [], "top_level_prefixes": []}), encoding="utf-8")
+            link = root / "linked"
+            proc = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True, text=True)
+            if proc.returncode != 0 or not link.exists():
+                self.skipTest("external evidence: junction creation unavailable on this seat")
+            code, out = self._run(root, "linked/m.json")
+            self.assertEqual(code, 1, out)
+            self.assertIn("exclusion manifest invalid", out)
+            self.assertIn("unavailable", out)
 
     def test_drive_invalid_manifests_fail_closed(self) -> None:
         cases = {

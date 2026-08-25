@@ -140,7 +140,7 @@ activity is never a gate (`docs/template_framework/external_repository_roles.md`
 
 candidate* (`docs/template_framework/candidate_review_acceptance.md`).
 
-- Identity strategy (file / manifest / git): file
+- Identity strategy (file / manifest / git): OMITTED
 - Candidate paths:
   - `graphab_optimization_kit/runtime/jars/graphab.jar`
 - Identity value recorded at freeze: 8830e486f5fdd1a9818d0db08976fa9bdb541cb93b4010bb85aaa57df3221456

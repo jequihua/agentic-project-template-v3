@@ -373,7 +373,9 @@ local_state:
   # declared in the drive policy as oracle_exclusion_manifest. Recommended path:
   oracle_exclusion_manifest: "06_infra/oracle_exclusion_manifest.json"
   # The oracle content bound (16 MiB) is a drive constant, not a declarable
-  # value; the pre-launch command below carries it literally.
+  # value; the pre-launch command below carries it literally. Pass --exclusions
+  # only when the drive policy declares a manifest (a declared-but-missing
+  # file refuses, as it does at drive admission); omit it otherwise.
   prelaunch_size_check: "python scripts/local_state_audit.py --limit-bytes 16777216 --exclusions 06_infra/oracle_exclusion_manifest.json"
 
 validation:

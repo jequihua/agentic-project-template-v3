@@ -41,7 +41,8 @@ runner policy and recommended at the path named by `local_state.oracle_exclusion
 in `frutlups.layout.yaml`. Do not duplicate its entries here: record the
 manifest path once, and one sentence per entry on why it is excluded. The
 pre-launch check that reads the same file is the layout's
-`local_state.prelaunch_size_check` command (see
+`local_state.prelaunch_size_check` command; pass its `--exclusions` flag only
+when a manifest is declared (see
 `docs/template_framework/security_and_local_state.md`).
 
 - exclusion manifest path:

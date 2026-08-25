@@ -84,7 +84,7 @@ Attempt tokens are resolved before rendering; this table never carries one.
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
 | 01_data/evidence/m002_s02_attempt_002/joined_ledger.json | evidence | coder | create_fresh_per_attempt |
-| 03_experiments/m002_acquisition_record.md | analysis | coder | append_only |
+| 03_experiments/m002_acquisition_record.md | analysis | coder | modify |
 | 05_governance/reviews/m002/m002_s02_attempt_002_self_report.md | self_report | coder | create_fresh_per_attempt |
 | 05_governance/reviews/m002/m002_s02_attempt_002_review_report.md | review_report | reviewer | create_fresh_per_attempt |
 

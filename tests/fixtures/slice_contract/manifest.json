@@ -81,7 +81,7 @@
       "id": "all_fields_rendered_m002_s02_attempt_001",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/all_fields_rendered_m002_s02_attempt_001.md",
-      "sha256": "bf68b1ce0e1fd630d0630512d0d7126fe93bcda0c0132f943026abe0518c35fc",
+      "sha256": "3c0ce01e143880e123091eefd06162fed440cf3b3f9a1a7baad43f418f718af8",
       "tags": [
         "positive",
         "render",
@@ -102,7 +102,7 @@
       "id": "all_fields_rendered_m002_s02_attempt_002",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/all_fields_rendered_m002_s02_attempt_002.md",
-      "sha256": "b6e287f8cc9c3169688f64d7f62d9ad507c808b7e4f4835a77fbe8c144c49d6f",
+      "sha256": "c10b7d6685b8ea144d8de9d88d5a26b8ba4d3dc7cf5abd37c4f41ac59d15e27a",
       "tags": [
         "positive",
         "render",
@@ -1243,7 +1243,7 @@
       "id": "rendered_attempt_mismatch",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_attempt_mismatch.md",
-      "sha256": "b6e287f8cc9c3169688f64d7f62d9ad507c808b7e4f4835a77fbe8c144c49d6f",
+      "sha256": "c10b7d6685b8ea144d8de9d88d5a26b8ba4d3dc7cf5abd37c4f41ac59d15e27a",
       "tags": [
         "adversarial",
         "render",
@@ -1268,7 +1268,7 @@
       "id": "rendered_attempt_path_reuse",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_attempt_path_reuse.md",
-      "sha256": "12b66950ad454ef7c51e555f98ea93a569852b524db7e8a12faa6c9a6779ef38",
+      "sha256": "15c7dcaa10da2e2c56a3f650745564d4f366b142c37ade3a19d926bda53744ab",
       "tags": [
         "adversarial",
         "render"
@@ -1291,6 +1291,94 @@
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_deleted_section_residue.md",
       "sha256": "1e3d47e0c3f8c9d3b58a371c78e5c5bd291782828b92e3c0668dcb056efd3b68",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "attempt": 2,
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M002-S02"
+      },
+      "description": "An envelope field renders a different vocabulary value than the entry.",
+      "expected": {
+        "codes": [
+          "rendered_value_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_envelope_value_replaced",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_envelope_value_replaced.md",
+      "sha256": "1fad6cd011a602cc4ae88368ef39f8a383f0c8a364061723a8fba62ecf52a86c",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A list section carries an item the entry does not declare.",
+      "expected": {
+        "codes": [
+          "rendered_value_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_extra_list_item",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_extra_list_item.md",
+      "sha256": "059844c968d748e0853ca3ef9f8bfa00c7bc01f80ad5b8a613bfddf1c8f80ec1",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "attempt": 2,
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M002-S02"
+      },
+      "description": "The reviewer's round-2 probe: the value is replaced while the label's allowed-values hint still contains the word; a substring test would accept it.",
+      "expected": {
+        "codes": [
+          "rendered_value_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_field_value_replaced",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_field_value_replaced.md",
+      "sha256": "2ceeb1de1b2ec372e978aa0642255915264121b463481a41bc55ee31c9c60ed9",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "attempt": 2,
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M002-S02"
+      },
+      "description": "A single manifest cell differs from the entry.",
+      "expected": {
+        "codes": [
+          "rendered_manifest_row_missing",
+          "rendered_value_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_manifest_cell_replaced",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_manifest_cell_replaced.md",
+      "sha256": "3b770832b962de9f173c7bf2cfab813654f4114994c09440956b06f0a81c8d0a",
       "tags": [
         "adversarial",
         "render"
@@ -1344,10 +1432,11 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A section appears twice.",
+      "description": "A section appears twice; the keyed parse then sees the placeholder item where the entry values belong.",
       "expected": {
         "codes": [
-          "rendered_section_duplicate"
+          "rendered_section_duplicate",
+          "rendered_value_missing"
         ],
         "result": "fail"
       },
@@ -1387,10 +1476,11 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A slot token survived rendering.",
+      "description": "A slot token survived rendering, so the task body no longer equals the entry.",
       "expected": {
         "codes": [
-          "rendered_sentinel_residue"
+          "rendered_sentinel_residue",
+          "rendered_value_missing"
         ],
         "result": "fail"
       },
@@ -1421,7 +1511,7 @@
       "id": "rendered_token_unresolved",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_token_unresolved.md",
-      "sha256": "534987dce505ccbb7fb4f09cef2a84fff15564ac884081e08cfb928218113d0b",
+      "sha256": "306c7861169d80b1ec418fecf7b887260a0c7b2b16f45946b6a6794f1e58537e",
       "tags": [
         "adversarial",
         "render"
@@ -1676,6 +1766,38 @@
     },
     {
       "args": {},
+      "description": "A fence indented by up to three spaces is still a fence.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "review_report_indented_fence_valid",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_indented_fence_valid.md",
+      "sha256": "662db2956f6df0b3533d12f99e1e371d73daf9d604a0160f3bb040bfda01f0da",
+      "tags": [
+        "review",
+        "positive"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A four-backtick fence closes only on a fence at least as long; the inner three-backtick line does not close it.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "review_report_long_backtick_fence_valid",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_long_backtick_fence_valid.md",
+      "sha256": "62e8f8c3583f72dd3ff0c5c8b7d6abc3804f226c41bb05e50d8b2cf320f4ec49",
+      "tags": [
+        "review",
+        "positive"
+      ]
+    },
+    {
+      "args": {},
       "description": "A second objective-status line anywhere in the report is ambiguous.",
       "expected": {
         "codes": [
@@ -1749,6 +1871,22 @@
     },
     {
       "args": {},
+      "description": "The reviewer's round-2 probe: a tilde-fenced example holding both lines is fenced text and never counts toward cardinality.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "review_report_tilde_fenced_example_valid",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_tilde_fenced_example_valid.md",
+      "sha256": "d1a39ce8e26aa24f13780811d5fbe8b1ea209c1fa5d4ea6816a4a5078e77eac3",
+      "tags": [
+        "review",
+        "positive"
+      ]
+    },
+    {
+      "args": {},
       "description": "Two verdict sections are ambiguous.",
       "expected": {
         "codes": [
@@ -1795,7 +1933,7 @@
       "id": "review_report_verdict_missing",
       "mode": "review",
       "path": "tests/fixtures/slice_contract/review_report_verdict_missing.md",
-      "sha256": "3ac9d0cd6efe822e62254442427b9129f47fc6ffc18ef5a9ed54c7df490727dd",
+      "sha256": "7e100bd876b44e3fa744091ad01f4a3a674746b079f26033dbb0e6fe6e4f6f2e",
       "tags": [
         "review",
         "adversarial"

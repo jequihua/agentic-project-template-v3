@@ -37,6 +37,7 @@ VOLATILE_RES = (
 READY_SENTINELS = ("TBD", "<value>", "<path>", "<one move>")
 READY_RESIDUE_PHRASES = ("delete this section", "conditional: rendered only", "fills or deletes")
 WORKFLOW_STATUS_RE = re.compile(r"^status:\s*([A-Za-z_-]+)\s*$")
+WORKFLOW_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 HISTORICAL_WORDS = (
     "historical",
     "nonexistent",
@@ -253,17 +254,18 @@ def _profile_summary(records: list[dict]) -> dict:
 
 def _workflow_status(lines: list[str]) -> str:
     """Status declared in the first fenced workflow-metadata block, if any."""
-    fenced = False
+    open_char, open_len = "", 0
     for line in lines:
-        if line.startswith("```"):
-            if fenced:
-                return ""
-            fenced = True
+        fence = WORKFLOW_FENCE_RE.match(line)
+        if not open_char:
+            if fence:
+                open_char, open_len = fence.group(1)[0], len(fence.group(1))
             continue
-        if fenced:
-            match = WORKFLOW_STATUS_RE.match(line.strip())
-            if match:
-                return match.group(1)
+        if fence and fence.group(1)[0] == open_char and len(fence.group(1)) >= open_len and not fence.group(2).strip():
+            return ""
+        match = WORKFLOW_STATUS_RE.match(line.strip())
+        if match:
+            return match.group(1)
     return ""
 
 

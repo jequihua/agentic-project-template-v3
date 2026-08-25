@@ -47,6 +47,9 @@ class ExclusionManifestInvalid(Exception):
 
 
 def _canonical_relative(value) -> bool:
+    """The drive's canonical repository-relative POSIX rule, applied to the
+    unmodified declared string: no backslash, no absolute or drive-letter form,
+    no empty, '.', or '..' segment, no trailing slash, no surrounding space."""
     if not isinstance(value, str) or not value or value != value.strip():
         return False
     if "\\" in value or value.startswith("/") or value.endswith("/"):
@@ -57,20 +60,34 @@ def _canonical_relative(value) -> bool:
     return all(part not in ("", ".", "..") for part in parts)
 
 
-def load_exclusion_manifest(root: Path, relative) -> tuple[set, tuple]:
+def _is_junction(path: Path) -> bool:
+    return bool(getattr(path, "is_junction", lambda: False)())
+
+
+def load_exclusion_manifest(root: Path, declared) -> tuple[set, tuple]:
     """Return (exact_paths, top_level_prefixes) or raise ExclusionManifestInvalid.
-    An absent declaration (None) or an absent file means no exclusions."""
-    if relative is None:
+
+    ``declared is None`` means no declaration (nothing excluded). A declared
+    reference is validated unmodified before any filesystem access, then resolved
+    strictly under the strictly resolved root; a declared file that is missing,
+    a link, or a junction refuses - exactly the drive's behavior."""
+    if declared is None:
         return set(), ()
-    rel_text = str(relative).replace("\\", "/")
-    manifest_path = root / rel_text
-    if not manifest_path.exists():
-        return set(), ()
-    if not _canonical_relative(rel_text) or rel_text.split("/", 1)[0] in GOVERNED_TOP_LEVEL:
+    rel_text = str(declared)
+    if not _canonical_relative(rel_text):
         raise ExclusionManifestInvalid("the declared path is not canonical")
-    if manifest_path.is_symlink() or not manifest_path.is_file():
-        raise ExclusionManifestInvalid("the declared file is unavailable")
-    data = manifest_path.read_bytes()
+    if rel_text.split("/", 1)[0] in GOVERNED_TOP_LEVEL:
+        raise ExclusionManifestInvalid("the declared file is outside the frozen surface")
+    manifest_path = root / rel_text
+    try:
+        resolved_root = Path(root).resolve(strict=True)
+        resolved = manifest_path.resolve(strict=True)
+        resolved.relative_to(resolved_root)
+        if manifest_path.is_symlink() or _is_junction(manifest_path) or not resolved.is_file():
+            raise OSError
+        data = resolved.read_bytes()
+    except (OSError, ValueError):
+        raise ExclusionManifestInvalid("the declared file is unavailable") from None
     if len(data) > MAX_MANIFEST_BYTES:
         raise ExclusionManifestInvalid(f"the declared file exceeds {MAX_MANIFEST_BYTES} bytes")
     try:
@@ -95,7 +112,7 @@ def load_exclusion_manifest(root: Path, relative) -> tuple[set, tuple]:
         raise ExclusionManifestInvalid("exact_paths must remain inside the frozen surface")
     for item in exact:
         candidate = root / item
-        if candidate.exists() and candidate.is_dir():
+        if candidate.exists() and (candidate.is_dir() or _is_junction(candidate)):
             raise ExclusionManifestInvalid("exact_paths must name files, not directories")
     checked = []
     for item in prefixes:
@@ -125,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit-bytes", type=int, default=None,
                         help="Pre-launch check: list undeclared files at or above this size and exit 1 "
                              "when any exist (the drive's oracle content bound is 16777216).")
-    parser.add_argument("--exclusions", type=Path, default=None,
+    parser.add_argument("--exclusions", type=str, default=None,
                         help="The drive's oracle exclusion manifest (strict JSON: contract_version, "
                              "exact_paths, top_level_prefixes); the same file the drive reads.")
     parser.add_argument("--top", type=int, default=10,
@@ -187,8 +204,8 @@ def main(argv: list[str] | None = None) -> int:
             and not rel.startswith(prefixes)
             and rel.split("/")[0] not in GOVERNED_TOP_LEVEL
         ]
-        declared = "none declared" if args.exclusions is None or not (root / args.exclusions).exists() else \
-            f"{len(exact)} exact exclusions, {len(prefixes)} prefix exclusions"
+        declared = "none declared" if args.exclusions is None else \
+            f"{len(exact)} exact exclusions, {len(prefixes)} prefix exclusions from {args.exclusions}"
         print(f"\nPre-launch size check (bound {args.limit_bytes} bytes; {declared}):")
         if offenders:
             for rel, size in sorted(offenders):

@@ -29,11 +29,15 @@ larger than the runner's oracle content bound (16 MiB) that must stay outside
 it is declared in the runner's JSON exclusion manifest - the single
 machine-read exclusion source; the Markdown roots table only references it.
 Before the launch word, run the read-only pre-launch check, which reads that
-same JSON file and exits 1 while any undeclared file sits at or above the
-bound:
+same JSON file with the runner's own grammar - it refuses exactly what the
+runner refuses (a non-canonical reference, a declared file that is missing,
+a link, malformed fields) - and exits 1 while any undeclared file sits at or
+above the bound. Pass `--exclusions` only when the runner policy declares a
+manifest; a project without one runs the check without the flag:
 
 ```powershell
 python scripts/local_state_audit.py --limit-bytes 16777216 --exclusions 06_infra/oracle_exclusion_manifest.json
+python scripts/local_state_audit.py --limit-bytes 16777216   # no manifest declared
 ```
 
 ## Rebuildable Local State

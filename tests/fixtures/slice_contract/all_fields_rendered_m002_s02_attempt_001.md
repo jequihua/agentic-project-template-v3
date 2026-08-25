@@ -8,12 +8,14 @@ milestone: M002
 slice: M002-S02
 title: Re-acquire the paired route ledger under the bounded replay authority
 role: coder
+authored_by: architect_reviewer
 mode: corrective repair
 strictness: Level 4
 live: true
 corrective: true
 attempt: "001"
 status: ready
+dispatch_authority: 05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md
 ```
 
 ## Current State
@@ -98,6 +100,7 @@ status also requires the recorded dispatch authority named in the metadata.
 - owner_note: 05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md
 - artifact_identity: 01_data/evidence/m002_s02_holistic_pass_001/frozen_manifest.json (sha256 e62302162bec9513841cd3db4420fb16987aa1ba8f71caa159fe7a185f634ac0)
 - human_launch_word: 05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md
+- pinned_external_release: frutlups 0.1.8 (repository frutlups, tag v0.1.8, commit 2d4f1c1ff76b057c79a106d6b586d4949110ed31)
 
 ## External Repositories
 
@@ -118,12 +121,13 @@ activity is never a gate (`docs/template_framework/external_repository_roles.md`
 
 | Finding | Violated invariant | Prior disposition | Controlling authority action | Coder obligation | Required closure proof |
 | --- | --- | --- | --- | --- | --- |
-| AL2-F1 | a no-ledger project carries no ledger row | open | remediate under the controlling ruling | remediate and cite closure proof | Nine admitted rows per arm, or a preserved partial stop with the exact Java exception |
+| AL2-F1 | a no-ledger project carries no ledger row | open | owner note 003 authorizes exactly one bounded replay | re-acquire the ledger under the frozen envelope and cite the rows | nine admitted rows per arm in joined_ledger.json |
 
 - Controlling ruling: `05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md`
 - Prior evidence identities: `01_data/evidence/m002_s02_holistic_pass_001/partial_ledger.json` sha256 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
 - Required closure proof: Nine admitted rows per arm, or a preserved partial stop with the exact Java exception
-- Allowed files and claims: the write manifest above.
+- Allowed files and claims: exactly the write manifest above (derived; no
+  separate typed field).
 - Claims withdrawn or narrowed: none
 - Evidence invalidated: the attempt-001 partial ledger is superseded, not deleted
 - Minimum rerun set: the nine-case paired replay
@@ -153,7 +157,7 @@ exceeding them is refused at admission, never silently overridden.
   runner's policy): JAVA_TOOL_OPTIONS sha256 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
 - Identities (arm / group / order / attempt): arm:baseline, arm:candidate, order:baseline-first
 - Retained bytes max: 536870912
-- Local output root: `local_state/m002_s02_attempt_002/`
+- Local output root: `local_state/m002_s02_attempt_001/`
 - Cleanup: quarantine
 - Negative result handling: preserve_and_stop
 - Stopped result handling: preserve_and_stop

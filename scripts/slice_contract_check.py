@@ -15,7 +15,7 @@ Usage (from the repository root):
     python scripts/slice_contract_check.py --sidecar 03_experiments/x.slices.yaml
     python scripts/slice_contract_check.py --sidecar a.slices.yaml --sidecar b.slices.yaml
     python scripts/slice_contract_check.py --sidecar x.slices.yaml --slice M001-S02 \\
-        --attempt 2 --rendered prompts/for_coding_agent/012_x.md
+        --rendered prompts/for_coding_agent/012_x.md [--attempt 2]
     python scripts/slice_contract_check.py --review-report 05_governance/reviews/r.md
 
 Properties: read-only, exact-path driven, deterministic, network-free, stable
@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import re
 import sys
 from dataclasses import asdict, dataclass
@@ -36,7 +37,7 @@ SCHEMA = "template.slice_contract_check.v1"
 MAX_INPUT_BYTES = 1_048_576
 SLICE_ID_RE = re.compile(r"^M\d{3}-S\d{2}$")
 MILESTONE_ID_RE = re.compile(r"^M\d{3}$")
-ATTEMPT_RE = re.compile(r"^\d{3}$")
+ATTEMPT_RE = re.compile(r"^(?!000)\d{3}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 STRICTNESS_RE = re.compile(r"^Level [1-4]$")
 HEADING_RE = re.compile(r"^## (.+?)\s*$")
@@ -45,6 +46,7 @@ RESIDUE_PHRASES = (
     "delete this section", "contract v1 section", "fills or deletes",
     "conditional: rendered only", "this preamble is scaffold documentation",
 )
+LOCAL_STATE_ROOT = "local_state/"
 ENVELOPE_REQUIRED = (
     "timing_probe", "agent_budget_seconds", "subprocess_budget_seconds",
     "expected_wall_seconds", "hard_wall_seconds", "frozen_override",
@@ -58,6 +60,71 @@ SLICE_REQUIRED = (
     "non_goals", "verification", "opening_gates", "external_inputs",
     "candidate_identity", "correction", "execution_envelope", "objective",
     "definition_of_done",
+)
+CORRECTION_REQUIRED = (
+    "findings", "prior_evidence", "controlling_ruling", "closure_proof",
+    "claims_withdrawn", "evidence_invalidated", "minimum_rerun_set",
+)
+FINDING_REQUIRED = (
+    "id", "violated_invariant", "prior_disposition", "authority_action",
+    "coder_obligation", "closure_proof",
+)
+PATH_GATE_KINDS = ("accepted_review", "owner_note", "artifact_exists", "artifact_identity")
+
+# Every content diagnostic the checker can emit. Each has at least one fixture in
+# tests/fixtures/slice_contract/manifest.json expecting it (pinned by test), and the
+# contract document lists exactly these plus ENVIRONMENT_CODES.
+REASON_CODES = (
+    # sidecar shape
+    "sidecar_not_mapping", "version_missing", "unknown_contract_version",
+    "roadmap_missing", "roadmap_link_unresolved", "slices_missing", "slice_not_mapping",
+    "missing_field", "invalid_type", "duplicate_slice", "slice_id_format",
+    "slice_milestone_mismatch",
+    # identity, dispatch, class
+    "authored_by_invalid", "status_invalid", "dispatch_authority_missing",
+    "authority_path_invalid", "attempt_missing", "attempt_format", "strictness_invalid",
+    "task_is_title_only", "empty_list", "read_first_path_invalid",
+    # write manifest
+    "write_path_empty", "write_path_directory", "write_path_glob", "write_path_absolute",
+    "write_path_escape", "write_path_not_file", "artifact_type_invalid",
+    "role_owner_invalid", "retry_policy_invalid", "role_type_incompatible",
+    "reserved_artifact_mislabeled", "self_report_count", "attempt_token_missing",
+    "attempt_token_unexpected", "attempt_token_multiple", "write_read_conflict",
+    "sentinel_residue",
+    # gates, inputs, identity
+    "gate_kind_invalid", "gate_reference_missing", "gate_reference_invalid",
+    "gate_identity_missing", "external_input_invalid", "candidate_identity_invalid",
+    # correction
+    "correction_missing", "correction_field_missing", "correction_findings_missing",
+    "correction_prior_evidence_invalid", "correction_ruling_missing",
+    "correction_closure_proof_missing", "correction_list_invalid", "correction_unexpected",
+    # envelope
+    "envelope_missing", "envelope_unexpected", "envelope_field_missing",
+    "envelope_field_invalid", "envelope_probe_invalid", "envelope_binding_value_present",
+    "envelope_binding_hash_format", "envelope_cleanup_invalid", "envelope_handling_invalid",
+    "local_output_root_outside_local_state", "local_output_root_attempt_token",
+    "objective_missing",
+    # alignment
+    "projection_version_mismatch", "projection_counterpart_missing",
+    "projection_entry_mismatch",
+    # rendered prompt
+    "attempt_mismatch", "rendered_section_missing", "rendered_section_duplicate",
+    "rendered_section_unexpected", "rendered_sentinel_residue", "rendered_section_residue",
+    "rendered_token_unresolved", "rendered_metadata_missing",
+    "rendered_manifest_row_missing", "rendered_attempt_path_reuse", "rendered_value_missing",
+    # review report
+    "closure_section_missing", "closure_section_duplicate", "closure_after_verdict",
+    "closure_not_adjacent", "closure_line_count", "objective_status_line_missing",
+    "objective_status_invalid", "objective_status_duplicate",
+    "objective_evidence_line_missing", "objective_evidence_duplicate",
+    "verdict_section_missing", "verdict_section_duplicate", "verdict_footer_invalid",
+    "objective_status_in_verdict",
+)
+# I/O and usage diagnostics: unit-tested, not fixture-driven.
+ENVIRONMENT_CODES = (
+    "layout_unreadable", "layout_contract_block_missing", "layout_contract_block_incomplete",
+    "sidecar_unreadable", "rendered_unreadable", "review_report_unreadable",
+    "slice_not_found", "usage",
 )
 
 
@@ -95,9 +162,7 @@ def _load_yaml_file(path: Path) -> object:
             seen.add(key)
         return yaml.SafeLoader.construct_mapping(loader, node, deep=deep)
 
-    _Strict.add_constructor(
-        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping
-    )
+    _Strict.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping)
     raw = path.read_bytes()
     if len(raw) > MAX_INPUT_BYTES:
         raise _StrictLoadError(f"input exceeds {MAX_INPUT_BYTES} bytes")
@@ -159,24 +224,43 @@ def _sentinel_hits(value, sentinels) -> list[str]:
     return hits
 
 
+def _normalized_relative(path_value: str) -> str | None:
+    """Canonical repository-relative POSIX form, or None when the value is
+    absolute, escapes the root, or is not a clean relative path."""
+    if not isinstance(path_value, str) or not path_value.strip():
+        return None
+    p = path_value.strip().replace("\\", "/")
+    if p.startswith("/") or re.match(r"^[A-Za-z]:/", p) or p.startswith("//"):
+        return None
+    trailing = p.endswith("/")
+    norm = posixpath.normpath(p)
+    if norm.startswith("../") or norm == ".." or norm == "." or norm.startswith("/"):
+        return None
+    return norm + ("/" if trailing and norm != "." else "")
+
+
 def _path_problem(path_value: str) -> str | None:
+    """Write-manifest path rule: an exact repository-relative FILE path."""
     if not isinstance(path_value, str) or not path_value.strip():
         return "write_path_empty"
     p = path_value.strip()
     if p.endswith("/") or p.endswith("\\"):
         return "write_path_directory"
-    if any(ch in p for ch in "*?[") :
+    if any(ch in p for ch in "*?["):
         return "write_path_glob"
     if p.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:[\\/]", p) or p.startswith("\\\\"):
         return "write_path_absolute"
     parts = p.replace("\\", "/").split("/")
-    if ".." in parts or "." in parts:
+    if ".." in parts or "." in parts or _normalized_relative(p) is None:
         return "write_path_escape"
-    if "/" not in p and "." not in parts[-1]:
-        return "write_path_not_file"
     if "." not in parts[-1]:
         return "write_path_not_file"
     return None
+
+
+def _record_path_ok(value) -> bool:
+    """Exact repository-relative record path (a file, no glob, no escape)."""
+    return isinstance(value, str) and _path_problem(value) is None
 
 
 def _classify_reserved(path_value: str, classification: dict) -> str | None:
@@ -190,14 +274,26 @@ def _classify_reserved(path_value: str, classification: dict) -> str | None:
     return None
 
 
-def resolve_attempt(path_value: str, token: str, attempt: str) -> str:
-    return path_value.replace(token, attempt)
+def resolve_attempt(value: str, token: str, attempt: str | None) -> str:
+    return value.replace(token, attempt) if attempt else value
+
+
+def iter_leaves(value, path=()):
+    """Yield (key path, scalar) for every scalar leaf of a typed value."""
+    if isinstance(value, dict):
+        for k, v in value.items():
+            yield from iter_leaves(v, path + (str(k),))
+    elif isinstance(value, list):
+        for i, v in enumerate(value):
+            yield from iter_leaves(v, path + (str(i),))
+    else:
+        yield path, value
 
 
 # --- sidecar validation -----------------------------------------------------
 
 
-def validate_sidecar(doc: object, rel: str, layout: dict) -> list[Diagnostic]:
+def validate_sidecar(doc: object, rel: str, layout: dict, sidecar_path: Path | None = None) -> list[Diagnostic]:
     d: list[Diagnostic] = []
     if not isinstance(doc, dict):
         return [Diagnostic("sidecar_not_mapping", rel, "", "top level must be a mapping")]
@@ -210,6 +306,8 @@ def validate_sidecar(doc: object, rel: str, layout: dict) -> list[Diagnostic]:
     roadmap = doc.get("roadmap")
     if not isinstance(roadmap, str) or not roadmap.strip() or "/" in roadmap or "\\" in roadmap:
         d.append(Diagnostic("roadmap_missing", rel, "", "roadmap must name the prose roadmap file beside this sidecar"))
+    elif sidecar_path is not None and not (sidecar_path.parent / roadmap).is_file():
+        d.append(Diagnostic("roadmap_link_unresolved", rel, "", f"roadmap {roadmap!r} does not exist beside the sidecar"))
     slices = doc.get("slices")
     if not isinstance(slices, list) or not slices:
         d.append(Diagnostic("slices_missing", rel, "", "slices must be a non-empty list"))
@@ -228,10 +326,10 @@ def validate_sidecar(doc: object, rel: str, layout: dict) -> list[Diagnostic]:
             if sid in seen_ids:
                 d.append(Diagnostic("duplicate_slice", rel, loc, "slice id declared more than once"))
             seen_ids.add(sid)
-        for field in SLICE_REQUIRED:
-            if field not in entry:
-                d.append(Diagnostic("missing_field", rel, loc, f"required field missing: {field}"))
-        if any(x.code == "missing_field" and x.location == loc for x in d):
+        missing = [f for f in SLICE_REQUIRED if f not in entry]
+        for field in missing:
+            d.append(Diagnostic("missing_field", rel, loc, f"required field missing: {field}"))
+        if missing:
             continue
         d.extend(_validate_entry(entry, rel, loc, layout))
     return d
@@ -239,9 +337,12 @@ def validate_sidecar(doc: object, rel: str, layout: dict) -> list[Diagnostic]:
 
 def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnostic]:
     d: list[Diagnostic] = []
-    err = lambda code, msg: d.append(Diagnostic(code, rel, loc, msg))  # noqa: E731
+
+    def err(code: str, msg: str, where: str = loc) -> None:
+        d.append(Diagnostic(code, rel, where, msg))
+
     sentinels = layout["sentinels"]
-    hits = _sentinel_hits({k: v for k, v in e.items()}, sentinels)
+    hits = _sentinel_hits(dict(e), sentinels)
     if hits:
         err("sentinel_residue", "unresolved sentinel in entry: " + ", ".join(sorted(set(hits))))
 
@@ -256,10 +357,11 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
     status = e["status"]
     if status not in layout["entry_status_values"]:
         err("status_invalid", f"status must be one of {layout['entry_status_values']}")
-    elif status == "ready":
-        auth = e.get("dispatch_authority")
-        if not isinstance(auth, str) or not auth.strip():
-            err("dispatch_authority_missing", "status: ready requires dispatch_authority (exact record path)")
+    auth = e.get("dispatch_authority")
+    if status == "ready" and (not isinstance(auth, str) or not auth.strip()):
+        err("dispatch_authority_missing", "status: ready requires dispatch_authority (exact record path)")
+    elif auth is not None and not _record_path_ok(auth):
+        err("authority_path_invalid", f"dispatch_authority must be an exact repository-relative record path: {auth!r}")
     if not (isinstance(e["strictness"], str) and STRICTNESS_RE.match(e["strictness"])):
         err("strictness_invalid", "strictness must be 'Level 1'..'Level 4'")
     if not isinstance(e["mode"], str) or not e["mode"].strip():
@@ -277,14 +379,14 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
             err("empty_list", f"{field} must be a non-empty list of strings")
     if _is_list_of_str(e["read_first"]):
         for rf in e["read_first"]:
-            if _path_problem(rf) in ("write_path_absolute", "write_path_escape", "write_path_glob"):
+            if _normalized_relative(rf) is None or any(ch in rf for ch in "*?["):
                 err("read_first_path_invalid", f"read_first entry is not an exact repository-relative path: {rf}")
 
     # write manifest
     writes = e["writes"]
     self_reports = 0
     token = layout["attempt_token"]
-    needs_attempt = bool(e["corrective"]) if isinstance(e["corrective"], bool) else False
+    needs_attempt = e["corrective"] is True
     if not isinstance(writes, list) or not writes:
         err("empty_list", "writes must be a non-empty list")
         writes = []
@@ -292,56 +394,55 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
     for i, w in enumerate(writes):
         wloc = f"{loc}.writes[{i}]"
         if not isinstance(w, dict):
-            d.append(Diagnostic("invalid_type", rel, wloc, "write entry must be a mapping")); continue
-        for key in ("path", "artifact_type", "role_owner", "retry_policy"):
-            if key not in w:
-                d.append(Diagnostic("missing_field", rel, wloc, f"write entry missing {key}"))
-        if any(x.location == wloc and x.code == "missing_field" for x in d):
+            err("invalid_type", "write entry must be a mapping", wloc)
+            continue
+        wmissing = [k for k in ("path", "artifact_type", "role_owner", "retry_policy") if k not in w]
+        for key in wmissing:
+            err("missing_field", f"write entry missing {key}", wloc)
+        if wmissing:
             continue
         path_value = w["path"]
         problem = _path_problem(path_value)
         if problem:
-            d.append(Diagnostic(problem, rel, wloc, f"invalid write path: {path_value!r}"))
+            err(problem, f"invalid write path: {path_value!r}", wloc)
         atype, owner, policy = w["artifact_type"], w["role_owner"], w["retry_policy"]
         if atype not in layout["artifact_types"]:
-            d.append(Diagnostic("artifact_type_invalid", rel, wloc, f"unknown artifact_type {atype!r}"))
+            err("artifact_type_invalid", f"unknown artifact_type {atype!r}", wloc)
         if owner not in layout["role_owners"]:
-            d.append(Diagnostic("role_owner_invalid", rel, wloc, f"unknown role_owner {owner!r}"))
+            err("role_owner_invalid", f"unknown role_owner {owner!r}", wloc)
         if policy not in layout["retry_policies"]:
-            d.append(Diagnostic("retry_policy_invalid", rel, wloc, f"unknown retry_policy {policy!r}"))
+            err("retry_policy_invalid", f"unknown retry_policy {policy!r}", wloc)
         if atype in layout["artifact_types"] and owner in layout["role_owners"]:
-            allowed = layout["role_type_matrix"].get(owner, [])
-            if atype not in allowed:
-                d.append(Diagnostic("role_type_incompatible", rel, wloc, f"{owner} may not own {atype}"))
+            if atype not in layout["role_type_matrix"].get(owner, []):
+                err("role_type_incompatible", f"{owner} may not own {atype}", wloc)
         if isinstance(path_value, str):
             reserved = _classify_reserved(path_value, layout["reserved_path_classification"])
             if reserved and reserved != atype:
-                d.append(Diagnostic("reserved_artifact_mislabeled", rel, wloc, f"path classifies as {reserved} but is labelled {atype!r}"))
+                err("reserved_artifact_mislabeled", f"path classifies as {reserved} but is labelled {atype!r}", wloc)
             if reserved in ("review_report", "verdict_record") and owner == "coder":
-                d.append(Diagnostic("role_type_incompatible", rel, wloc, f"coder may not own {reserved} (reserved path)"))
+                err("role_type_incompatible", f"coder may not own {reserved} (reserved path)", wloc)
             count = path_value.count(token)
             if policy == "create_fresh_per_attempt":
                 if count == 0:
-                    d.append(Diagnostic("attempt_token_missing", rel, wloc, "create_fresh_per_attempt requires one {attempt} token"))
+                    err("attempt_token_missing", "create_fresh_per_attempt requires one {attempt} token", wloc)
                 needs_attempt = True
             elif count:
-                d.append(Diagnostic("attempt_token_unexpected", rel, wloc, "{attempt} token allowed only with create_fresh_per_attempt"))
+                err("attempt_token_unexpected", "{attempt} token allowed only with create_fresh_per_attempt", wloc)
             if count > 1:
-                d.append(Diagnostic("attempt_token_multiple", rel, wloc, "at most one {attempt} token per path"))
+                err("attempt_token_multiple", "at most one {attempt} token per path", wloc)
             if path_value in read_set and policy == "create_once":
-                d.append(Diagnostic("write_read_conflict", rel, wloc, "create_once path also listed in read_first"))
+                err("write_read_conflict", "create_once path also listed in read_first", wloc)
         if owner == "coder" and atype == "self_report":
             self_reports += 1
     if self_reports != 1:
         err("self_report_count", f"exactly one coder-owned self_report write is required (found {self_reports})")
     attempt = e.get("attempt")
-    if needs_attempt:
-        if attempt is None:
-            err("attempt_missing", "corrective or fresh-per-attempt slices require attempt")
-        elif not (isinstance(attempt, str) and ATTEMPT_RE.match(attempt)):
-            err("attempt_format", "attempt must be three zero-padded digits as a string, e.g. \"002\"")
-    elif attempt is not None and not (isinstance(attempt, str) and ATTEMPT_RE.match(attempt)):
-        err("attempt_format", "attempt must be three zero-padded digits as a string")
+    attempt_present = attempt is not None
+    has_attempt = isinstance(attempt, str) and bool(ATTEMPT_RE.match(attempt))
+    if needs_attempt and attempt is None:
+        err("attempt_missing", "corrective or fresh-per-attempt slices require attempt")
+    elif attempt is not None and not has_attempt:
+        err("attempt_format", "attempt must be three zero-padded digits as a string, 001 through 999")
 
     # gates
     gates = e["opening_gates"]
@@ -352,18 +453,23 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
             for i, g in enumerate(gates):
                 gloc = f"{loc}.opening_gates[{i}]"
                 if not isinstance(g, dict) or "kind" not in g:
-                    d.append(Diagnostic("invalid_type", rel, gloc, "gate must be a mapping with kind")); continue
+                    err("invalid_type", "gate must be a mapping with kind", gloc)
+                    continue
                 kind = g["kind"]
                 if kind not in layout["gate_kinds"]:
-                    d.append(Diagnostic("gate_kind_invalid", rel, gloc, f"unknown gate kind {kind!r}")); continue
-                if not isinstance(g.get("reference"), str) or not g["reference"].strip():
-                    d.append(Diagnostic("gate_reference_missing", rel, gloc, "gate requires reference"))
+                    err("gate_kind_invalid", f"unknown gate kind {kind!r}", gloc)
+                    continue
+                ref = g.get("reference")
+                if not isinstance(ref, str) or not ref.strip():
+                    err("gate_reference_missing", "gate requires reference", gloc)
+                elif kind in PATH_GATE_KINDS and not _record_path_ok(ref):
+                    err("gate_reference_invalid", f"{kind} gate reference must be an exact repository-relative path: {ref!r}", gloc)
                 if kind == "artifact_identity" and not (isinstance(g.get("sha256"), str) and SHA256_RE.match(g["sha256"])):
-                    d.append(Diagnostic("gate_identity_missing", rel, gloc, "artifact_identity gate requires sha256"))
+                    err("gate_identity_missing", "artifact_identity gate requires sha256", gloc)
                 if kind == "pinned_external_release":
                     for key in ("repository", "tag", "commit"):
                         if not isinstance(g.get(key), str) or not g[key].strip():
-                            d.append(Diagnostic("gate_identity_missing", rel, gloc, f"pinned_external_release gate requires {key}"))
+                            err("gate_identity_missing", f"pinned_external_release gate requires {key}", gloc)
     # external inputs
     ext = e["external_inputs"]
     if ext != "none":
@@ -371,8 +477,11 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
             err("external_input_invalid", "external_inputs must be 'none' or a non-empty list")
         else:
             for i, x in enumerate(ext):
-                if not isinstance(x, dict) or not all(isinstance(x.get(k), str) and x[k].strip() for k in ("repository", "role", "identity")):
-                    d.append(Diagnostic("external_input_invalid", rel, f"{loc}.external_inputs[{i}]", "external input requires repository, role, identity"))
+                xloc = f"{loc}.external_inputs[{i}]"
+                if not isinstance(x, dict) or not all(isinstance(x.get(k), str) and x[k].strip() for k in ("repository", "path", "role", "identity")):
+                    err("external_input_invalid", "external input requires repository, path, role, identity", xloc)
+                elif not _record_path_ok(x["path"]):
+                    err("external_input_invalid", f"external input path must be an exact relative file path: {x['path']!r}", xloc)
     # candidate identity
     cand = e["candidate_identity"]
     if cand != "none":
@@ -380,30 +489,47 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
             err("candidate_identity_invalid", "candidate_identity must be 'none' or {strategy, paths, identity_value}")
         elif not _is_list_of_str(cand["paths"]) or not isinstance(cand["identity_value"], str) or not cand["identity_value"].strip():
             err("candidate_identity_invalid", "candidate_identity needs non-empty paths and identity_value")
+        elif any(not _record_path_ok(p) for p in cand["paths"]):
+            err("candidate_identity_invalid", "candidate_identity paths must be exact repository-relative file paths")
     # correction
     corr = e["correction"]
     if e["corrective"] is True:
         if corr == "none" or not isinstance(corr, dict):
             err("correction_missing", "corrective: true requires a correction block")
         else:
+            cmissing = [k for k in CORRECTION_REQUIRED if k not in corr]
+            for key in cmissing:
+                err("correction_field_missing", f"correction block missing {key}")
             findings = corr.get("findings")
-            if not isinstance(findings, list) or not findings or not all(
-                isinstance(f, dict) and all(isinstance(f.get(k), str) and f[k].strip() for k in ("id", "violated_invariant", "prior_disposition")) for f in findings
+            if "findings" not in cmissing and (
+                not isinstance(findings, list) or not findings or not all(
+                    isinstance(f, dict) and all(isinstance(f.get(k), str) and f[k].strip() for k in FINDING_REQUIRED)
+                    for f in findings
+                )
             ):
-                err("correction_findings_missing", "correction.findings requires id, violated_invariant, prior_disposition per finding")
+                err("correction_findings_missing", "each correction finding requires " + ", ".join(FINDING_REQUIRED))
             pe = corr.get("prior_evidence")
-            if not isinstance(pe, list) or not pe or not all(
-                isinstance(p, dict) and isinstance(p.get("path"), str) and isinstance(p.get("sha256"), str) and SHA256_RE.match(p["sha256"]) for p in pe
+            if "prior_evidence" not in cmissing and (
+                not isinstance(pe, list) or not pe or not all(
+                    isinstance(p, dict) and _record_path_ok(p.get("path")) and isinstance(p.get("sha256"), str) and SHA256_RE.match(p["sha256"])
+                    for p in pe
+                )
             ):
-                err("correction_prior_evidence_invalid", "correction.prior_evidence requires path + sha256 entries")
+                err("correction_prior_evidence_invalid", "correction.prior_evidence requires exact relative path + sha256 entries")
             ruling = corr.get("controlling_ruling")
-            ok_ruling = (isinstance(ruling, str) and ruling.strip() and ruling != "disputed") or (
-                isinstance(ruling, dict) and isinstance(ruling.get("disputed"), str) and ruling["disputed"].strip()
-            )
-            if not ok_ruling:
-                err("correction_ruling_missing", "correction.controlling_ruling must be an exact owner-note path or {disputed: <note path>}")
-            if not _is_list_of_str(corr.get("closure_proof")):
+            if "controlling_ruling" not in cmissing:
+                if isinstance(ruling, dict) and set(ruling) == {"disputed"}:
+                    if not _record_path_ok(ruling.get("disputed")):
+                        err("correction_ruling_missing", "disputed ruling requires an exact owner-note path")
+                elif not _record_path_ok(ruling) or ruling == "disputed":
+                    err("correction_ruling_missing", "correction.controlling_ruling must be an exact owner-note path or {disputed: <note path>}")
+            if "closure_proof" not in cmissing and not _is_list_of_str(corr.get("closure_proof")):
                 err("correction_closure_proof_missing", "correction.closure_proof must be a non-empty list")
+            for key in ("claims_withdrawn", "evidence_invalidated"):
+                if key not in cmissing and corr[key] != "none" and not _is_list_of_str(corr[key]):
+                    err("correction_list_invalid", f"correction.{key} must be 'none' or a non-empty list of strings")
+            if "minimum_rerun_set" not in cmissing and not _is_list_of_str(corr.get("minimum_rerun_set")):
+                err("correction_list_invalid", "correction.minimum_rerun_set must be a non-empty list of strings")
     elif corr != "none":
         err("correction_unexpected", "correction block present but corrective is false")
     # execution envelope
@@ -412,27 +538,31 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
         if env == "none" or not isinstance(env, dict):
             err("envelope_missing", "live: true requires an execution_envelope")
         else:
-            for key in ENVELOPE_REQUIRED:
-                if key not in env:
-                    err("envelope_field_missing", f"execution_envelope missing {key}")
-            if all(k in env for k in ENVELOPE_REQUIRED):
+            emissing = [k for k in ENVELOPE_REQUIRED if k not in env]
+            for key in emissing:
+                err("envelope_field_missing", f"execution_envelope missing {key}")
+            if not emissing:
                 tp = env["timing_probe"]
-                if not isinstance(tp, dict) or not isinstance(tp.get("command"), str) or not isinstance(tp.get("expected_seconds"), (int, float)):
+                if not isinstance(tp, dict) or not isinstance(tp.get("command"), str) or not tp["command"].strip() or not isinstance(tp.get("expected_seconds"), (int, float)) or isinstance(tp.get("expected_seconds"), bool):
                     err("envelope_probe_invalid", "timing_probe requires command and expected_seconds")
                 for key in ("agent_budget_seconds", "subprocess_budget_seconds", "expected_wall_seconds", "hard_wall_seconds", "retained_bytes_max"):
                     if not isinstance(env[key], (int, float)) or isinstance(env[key], bool) or env[key] <= 0:
                         err("envelope_field_invalid", f"{key} must be a positive number")
                 fo = env["frozen_override"]
-                if fo != "none" and not (isinstance(fo, dict) and isinstance(fo.get("authority"), str) and fo["authority"].strip()):
-                    err("envelope_field_invalid", "frozen_override must be 'none' or {authority: <owner-note path>}")
+                if fo != "none":
+                    if not (isinstance(fo, dict) and set(fo) == {"authority"}):
+                        err("envelope_field_invalid", "frozen_override must be 'none' or {authority: <owner-note path>}")
+                    elif not _record_path_ok(fo["authority"]):
+                        err("authority_path_invalid", f"frozen_override.authority must be an exact repository-relative record path: {fo['authority']!r}")
                 bindings = env["environment_bindings"]
                 if bindings != "none":
-                    if not isinstance(bindings, list):
-                        err("envelope_field_invalid", "environment_bindings must be 'none' or a list")
+                    if not isinstance(bindings, list) or not bindings:
+                        err("envelope_field_invalid", "environment_bindings must be 'none' or a non-empty list")
                     else:
                         for b in bindings:
                             if not isinstance(b, dict):
-                                err("envelope_field_invalid", "binding must be a mapping"); continue
+                                err("envelope_field_invalid", "binding must be a mapping")
+                                continue
                             if "value" in b:
                                 err("envelope_binding_value_present", f"binding {b.get('name')!r} carries a value; only name and value_sha256 are allowed")
                             if not isinstance(b.get("name"), str) or not b["name"].strip():
@@ -443,8 +573,18 @@ def _validate_entry(e: dict, rel: str, loc: str, layout: dict) -> list[Diagnosti
                 if ids != "none" and not _is_list_of_str(ids):
                     err("envelope_field_invalid", "identities must be 'none' or a non-empty list of strings")
                 root = env["local_output_root"]
-                if not isinstance(root, str) or not root.replace("\\", "/").startswith("local_state/"):
-                    err("local_output_root_outside_local_state", "local_output_root must be under local_state/")
+                if not isinstance(root, str) or not root.strip():
+                    err("local_output_root_outside_local_state", "local_output_root must be a path under local_state/")
+                else:
+                    tokens = root.count(token)
+                    if attempt_present and tokens != 1:
+                        err("local_output_root_attempt_token", "an attempt-bearing entry needs exactly one {attempt} token in local_output_root")
+                    elif not attempt_present and tokens:
+                        err("local_output_root_attempt_token", "an entry without an attempt must not carry an {attempt} token in local_output_root")
+                    resolved = resolve_attempt(root, token, attempt if has_attempt else "001")
+                    norm = _normalized_relative(resolved)
+                    if norm is None or not norm.startswith(LOCAL_STATE_ROOT) or norm == LOCAL_STATE_ROOT:
+                        err("local_output_root_outside_local_state", f"local_output_root must resolve under {LOCAL_STATE_ROOT}: {root!r}")
                 if env["cleanup"] not in layout["cleanup_values"]:
                     err("envelope_cleanup_invalid", f"cleanup must be one of {layout['cleanup_values']}")
                 for key in ("negative_result_handling", "stopped_result_handling"):
@@ -465,7 +605,7 @@ def check_alignment(a: dict, b: dict, rel_a: str, rel_b: str) -> list[Diagnostic
         d.append(Diagnostic("projection_version_mismatch", rel_b, "", "sidecars declare different contract versions"))
     sa = {s.get("slice"): s for s in a.get("slices", []) if isinstance(s, dict)}
     sb = {s.get("slice"): s for s in b.get("slices", []) if isinstance(s, dict)}
-    for sid in sorted(set(sa) | set(sb)):
+    for sid in sorted(set(sa) | set(sb), key=str):
         if sid not in sa or sid not in sb:
             where = rel_b if sid not in sb else rel_a
             d.append(Diagnostic("projection_counterpart_missing", where, str(sid), "slice declared in only one projection"))
@@ -495,13 +635,41 @@ def _sections(text: str) -> tuple[list[str], dict[str, str]]:
     return order, {k: "\n".join(v) for k, v in bodies.items()}
 
 
-def check_rendered(doc: dict, slice_id: str, attempt: str | None, rendered: str, rel: str, layout: dict) -> list[Diagnostic]:
+# Top-level entry key -> rendered section. Metadata keys map to the preamble
+# (section "") which holds the fenced workflow block.
+FIELD_SECTIONS = {
+    "slice": "", "title": "", "milestone": "", "authored_by": "", "status": "",
+    "dispatch_authority": "", "attempt": "", "strictness": "", "mode": "", "live": "",
+    "corrective": "",
+    "task": "Task", "active_workspaces": "Active Workspaces", "read_first": "Read First",
+    "writes": "Write Manifest", "non_goals": "Non-Goals", "verification": "Verification",
+    "opening_gates": "Opening Gates", "external_inputs": "External Repositories",
+    "candidate_identity": "Candidate Identity", "correction": "Correction Scope Map",
+    "execution_envelope": "Execution Envelope", "objective": "Objective And Closure Proof",
+    "definition_of_done": "Definition Of Done",
+}
+
+
+def _leaf_text(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: str, rel: str, layout: dict) -> list[Diagnostic]:
     d: list[Diagnostic] = []
-    err = lambda code, msg, loc="": d.append(Diagnostic(code, rel, loc or slice_id, msg))  # noqa: E731
+
+    def err(code: str, msg: str) -> None:
+        d.append(Diagnostic(code, rel, slice_id, msg))
+
     entry = next((s for s in doc.get("slices", []) if isinstance(s, dict) and s.get("slice") == slice_id), None)
     if entry is None:
         return [Diagnostic("slice_not_found", rel, slice_id, "slice id not in sidecar")]
     token = layout["attempt_token"]
+    entry_attempt = entry.get("attempt") if isinstance(entry.get("attempt"), str) else None
+    if attempt_arg is not None and attempt_arg != entry_attempt:
+        err("attempt_mismatch", f"--attempt {attempt_arg} does not match the entry's attempt {entry_attempt!r}; an entry has one attempt identity")
+    attempt = entry_attempt
     order, bodies = _sections(rendered)
     counts = {h: order.count(h) for h in order}
     for h in layout["rendered_sections_required"]:
@@ -534,24 +702,42 @@ def check_rendered(doc: dict, slice_id: str, attempt: str | None, rendered: str,
             err("rendered_section_residue", f"deleted-section residue: {phrase!r}")
     if token in rendered:
         err("rendered_token_unresolved", "{attempt} token survives in the rendered prompt")
-    # metadata
-    for key in ("milestone", "slice", "title", "strictness", "mode", "status"):
-        value = entry.get(key)
-        if isinstance(value, str) and f"{key}: {value}" not in rendered and f'{key}: "{value}"' not in rendered:
-            err("rendered_metadata_missing", f"workflow metadata missing {key}: {value}")
-    for key in ("live", "corrective"):
-        value = "true" if entry.get(key) is True else "false"
-        if f"{key}: {value}" not in rendered:
-            err("rendered_metadata_missing", f"workflow metadata missing {key}: {value}")
-    if attempt and f"attempt: {attempt}" not in rendered and f'attempt: "{attempt}"' not in rendered:
-        err("rendered_metadata_missing", f"workflow metadata missing attempt: {attempt}")
-    # write manifest rows
+
+    # structural losslessness: every scalar leaf must appear in its section
+    preamble = bodies.get("", "")
+    for key, value in entry.items():
+        section = FIELD_SECTIONS.get(key)
+        if section is None:
+            continue
+        if value == "none" and section:
+            continue  # not-applicable group: its section must be absent (checked above)
+        body = preamble if section == "" else bodies.get(section, "")
+        for path, leaf in iter_leaves(value):
+            text = resolve_attempt(_leaf_text(leaf), token, attempt)
+            if not text.strip():
+                continue
+            if section == "" and not path:
+                expected = f"{key}: {text}"
+                if expected not in body and f'{key}: "{text}"' not in body:
+                    err("rendered_metadata_missing", f"workflow metadata missing {expected}")
+                continue
+            if key == "task":
+                for line in text.splitlines():
+                    if line.strip() and line.strip() not in body:
+                        err("rendered_value_missing", f"Task does not carry: {line.strip()[:60]}")
+                continue
+            if text not in body:
+                where = ".".join((key,) + path)
+                err("rendered_value_missing", f"{section or 'metadata'} does not carry {where}: {text[:60]}")
+    if attempt is None and "attempt:" in preamble:
+        err("rendered_metadata_missing", "attempt line rendered for an entry without an attempt")
+    # write manifest rows (same line) and attempt reuse
     manifest = bodies.get("Write Manifest", "")
     for w in entry.get("writes", []):
         if not isinstance(w, dict):
             continue
         path_value = str(w.get("path", ""))
-        resolved = resolve_attempt(path_value, token, attempt) if attempt else path_value
+        resolved = resolve_attempt(path_value, token, attempt)
         row_ok = any(
             resolved in line and str(w.get("artifact_type")) in line and str(w.get("role_owner")) in line and str(w.get("retry_policy")) in line
             for line in manifest.splitlines()
@@ -561,59 +747,19 @@ def check_rendered(doc: dict, slice_id: str, attempt: str | None, rendered: str,
         if token in path_value and attempt:
             for other in range(1, 1000):
                 other_attempt = f"{other:03d}"
-                if other_attempt == attempt:
-                    continue
-                if resolve_attempt(path_value, token, other_attempt) in manifest:
-                    err("rendered_attempt_path_reuse", f"write target resolves to attempt {other_attempt}, not {attempt}")
+                if other_attempt != attempt and resolve_attempt(path_value, token, other_attempt) in rendered:
+                    err("rendered_attempt_path_reuse", f"a write target resolves to attempt {other_attempt}, not {attempt}")
                     break
         if w.get("artifact_type") == "self_report" and w.get("role_owner") == "coder":
             if resolved not in bodies.get("Self-Report", ""):
                 err("rendered_value_missing", f"Self-Report section does not name {resolved}")
-    # list values
-    for field, section in (("read_first", "Read First"), ("non_goals", "Non-Goals"), ("verification", "Verification"), ("definition_of_done", "Definition Of Done"), ("active_workspaces", "Active Workspaces")):
-        body = bodies.get(section, "")
-        for item in entry.get(field, []) if isinstance(entry.get(field), list) else []:
-            if str(item) not in body:
-                err("rendered_value_missing", f"{section} does not carry: {item}")
-    task_body = bodies.get("Task", "")
-    for line in str(entry.get("task", "")).splitlines():
-        if line.strip() and line.strip() not in task_body:
-            err("rendered_value_missing", f"Task does not carry: {line.strip()[:60]}")
-    obj = entry.get("objective") or {}
-    obody = bodies.get("Objective And Closure Proof", "")
-    for key in ("success_criteria", "closure_proof"):
-        for item in obj.get(key, []) if isinstance(obj, dict) else []:
-            if str(item) not in obody:
-                err("rendered_value_missing", f"Objective And Closure Proof does not carry: {item}")
-    if applicable["Opening Gates"]:
-        gbody = bodies.get("Opening Gates", "")
-        for g in entry.get("opening_gates", []):
-            if isinstance(g, dict) and (str(g.get("kind")) not in gbody or str(g.get("reference")) not in gbody):
-                err("rendered_value_missing", f"Opening Gates does not carry gate {g.get('kind')} {g.get('reference')}")
-    if applicable["Execution Envelope"]:
-        ebody = bodies.get("Execution Envelope", "")
-        env = entry.get("execution_envelope") or {}
-        for key in ("agent_budget_seconds", "subprocess_budget_seconds", "expected_wall_seconds", "hard_wall_seconds", "retained_bytes_max", "local_output_root", "cleanup", "negative_result_handling", "stopped_result_handling"):
-            if isinstance(env, dict) and str(env.get(key)) not in ebody:
-                err("rendered_value_missing", f"Execution Envelope does not carry {key}: {env.get(key)}")
-        if isinstance(env, dict) and isinstance(env.get("environment_bindings"), list):
-            for b in env["environment_bindings"]:
-                if isinstance(b, dict) and (str(b.get("name")) not in ebody or str(b.get("value_sha256")) not in ebody):
-                    err("rendered_value_missing", f"Execution Envelope does not carry binding {b.get('name')}")
-    if applicable["Correction Scope Map"]:
-        cbody = bodies.get("Correction Scope Map", "")
-        corr = entry.get("correction") or {}
-        if isinstance(corr, dict):
-            for f in corr.get("findings", []) if isinstance(corr.get("findings"), list) else []:
-                if isinstance(f, dict) and str(f.get("id")) not in cbody:
-                    err("rendered_value_missing", f"Correction Scope Map does not carry finding {f.get('id')}")
-            ruling = corr.get("controlling_ruling")
-            ruling_text = ruling if isinstance(ruling, str) else (ruling.get("disputed") if isinstance(ruling, dict) else "")
-            if ruling_text and str(ruling_text) not in cbody:
-                err("rendered_value_missing", "Correction Scope Map does not carry the controlling ruling")
-            for item in corr.get("closure_proof", []) if isinstance(corr.get("closure_proof"), list) else []:
-                if str(item) not in cbody:
-                    err("rendered_value_missing", f"Correction Scope Map does not carry closure proof: {item}")
+    env = entry.get("execution_envelope")
+    if isinstance(env, dict) and isinstance(env.get("local_output_root"), str) and attempt:
+        for other in range(1, 1000):
+            other_attempt = f"{other:03d}"
+            if other_attempt != attempt and resolve_attempt(env["local_output_root"], token, other_attempt) in rendered:
+                err("rendered_attempt_path_reuse", f"local_output_root resolves to attempt {other_attempt}, not {attempt}")
+                break
     return d
 
 
@@ -622,7 +768,10 @@ def check_rendered(doc: dict, slice_id: str, attempt: str | None, rendered: str,
 
 def check_review_report(text: str, rel: str, layout: dict) -> list[Diagnostic]:
     d: list[Diagnostic] = []
-    err = lambda code, msg: d.append(Diagnostic(code, rel, "", msg))  # noqa: E731
+
+    def err(code: str, msg: str) -> None:
+        d.append(Diagnostic(code, rel, "", msg))
+
     order, bodies = _sections(text)
     closure_n = order.count("Closure Decision")
     verdict_n = order.count("Verdict")
@@ -634,21 +783,43 @@ def check_review_report(text: str, rel: str, layout: dict) -> list[Diagnostic]:
         err("verdict_section_missing", "no '## Verdict' section")
     elif verdict_n > 1:
         err("verdict_section_duplicate", "more than one '## Verdict' section")
-    if closure_n and verdict_n and order.index("Closure Decision") > order.index("Verdict"):
-        err("closure_after_verdict", "'## Closure Decision' must precede '## Verdict'")
+    if closure_n == 1 and verdict_n == 1:
+        ci, vi = order.index("Closure Decision"), order.index("Verdict")
+        if ci > vi:
+            err("closure_after_verdict", "'## Closure Decision' must precede '## Verdict'")
+        elif vi != ci + 1:
+            err("closure_not_adjacent", "'## Closure Decision' must be the section immediately before '## Verdict'")
+    # global non-fenced cardinality
+    status_lines, evidence_lines, fenced = 0, 0, False
+    for line in text.splitlines():
+        if line.startswith("```"):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        if line.startswith("Objective status:"):
+            status_lines += 1
+        if line.startswith("Objective evidence:"):
+            evidence_lines += 1
+    if status_lines > 1:
+        err("objective_status_duplicate", f"exactly one 'Objective status:' line is allowed in the report (found {status_lines})")
+    if evidence_lines > 1:
+        err("objective_evidence_duplicate", f"exactly one 'Objective evidence:' line is allowed in the report (found {evidence_lines})")
     if closure_n == 1:
         lines = [l for l in bodies.get("Closure Decision", "").splitlines() if l.strip()]
-        status_lines = [l for l in lines if l.startswith("Objective status:")]
-        if len(status_lines) != 1:
-            err("objective_status_line_missing", "exactly one 'Objective status:' line is required")
+        if len(lines) != 2:
+            err("closure_line_count", f"the closure section must hold exactly two non-empty lines (found {len(lines)})")
+        status_here = [l for l in lines if l.startswith("Objective status:")]
+        if len(status_here) != 1:
+            err("objective_status_line_missing", "exactly one 'Objective status:' line is required in the closure section")
         else:
-            value = status_lines[0].split(":", 1)[1].strip()
+            value = status_here[0].split(":", 1)[1].strip()
             if value not in layout["objective_status_values"]:
                 err("objective_status_invalid", f"unknown objective status {value!r}")
-            idx = lines.index(status_lines[0])
+            idx = lines.index(status_here[0])
             nxt = lines[idx + 1] if idx + 1 < len(lines) else ""
-            if not nxt.startswith("Objective evidence:") or not nxt.split(":", 1)[1].strip():
-                err("objective_evidence_line_missing", "an 'Objective evidence:' line must immediately follow the status line")
+            if idx != 0 or not nxt.startswith("Objective evidence:") or not nxt.split(":", 1)[1].strip():
+                err("objective_evidence_line_missing", "the status line must be first and an 'Objective evidence:' line must immediately follow it")
     if verdict_n == 1:
         vlines = [l for l in bodies.get("Verdict", "").splitlines() if l.strip()]
         if not vlines or not VERDICT_FOOTER_RE.match(vlines[0]):
@@ -671,13 +842,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--layout", type=Path, default=None, help="layout file (default <root>/frutlups.layout.yaml)")
     parser.add_argument("--sidecar", action="append", default=[], type=Path)
     parser.add_argument("--slice", dest="slice_id")
-    parser.add_argument("--attempt", type=int)
+    parser.add_argument("--attempt", type=int, help="optional confirmation of the entry's attempt identity")
     parser.add_argument("--rendered", type=Path)
     parser.add_argument("--review-report", type=Path)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     root = args.root.resolve()
-    layout_path = (args.layout or root / "frutlups.layout.yaml")
+    layout_path = args.layout or root / "frutlups.layout.yaml"
     layout, diags = load_layout_contract(layout_path)
     docs: list[tuple[Path, dict]] = []
     if layout is not None:
@@ -688,8 +859,7 @@ def main(argv: list[str] | None = None) -> int:
             except (OSError, _StrictLoadError) as exc:
                 diags.append(Diagnostic("sidecar_unreadable", rel, "", str(exc)))
                 continue
-            found = validate_sidecar(doc, rel, layout)
-            diags.extend(found)
+            diags.extend(validate_sidecar(doc, rel, layout, sidecar_path=sc))
             if isinstance(doc, dict):
                 docs.append((sc, doc))
         if len(docs) == 2:

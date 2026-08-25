@@ -8,11 +8,13 @@ milestone: M001
 slice: M001-S01
 title: Add the bounded route-cost ledger
 role: coder
+authored_by: architect_reviewer
 mode: normal implementation
 strictness: Level 3
 live: false
 corrective: false
 status: ready
+dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
 ```
 
 ## Current State

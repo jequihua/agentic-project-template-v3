@@ -56,6 +56,16 @@ source still fails; a guard test proves both directions. Project invariants
 over reviewed artifacts are the artifact preflight's job and stay
 unconditional.
 
+## Fixture Corpora And The Artifact Preflight
+
+Fixture corpora under `tests/fixtures/` are exempt from the artifact-integrity
+preflight by policy: adversarial fixtures intentionally carry unresolved
+sentinels, fictional repository paths, and deleted-section residue, and a
+preflight run over them reports exactly those intended defects. The
+preflight's acceptance domain for a change is the changed non-fixture
+Markdown; fixture corpora are scanned by their own tests (UTF-8, LF, no
+machine-local paths, digest parity) instead.
+
 ## Optional Tools Must Not Be Imported
 
 The suite must run without llloom or frutlups installed. A shared helper checks

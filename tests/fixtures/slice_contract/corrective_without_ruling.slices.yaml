@@ -110,6 +110,11 @@ slices:
     sha256: e62302162bec9513841cd3db4420fb16987aa1ba8f71caa159fe7a185f634ac0
   - kind: human_launch_word
     reference: 05_governance/human_owner_notes/003_2026-08-26_m002_s02_bounded_replay_authorized.md
+  - kind: pinned_external_release
+    reference: frutlups 0.1.8
+    repository: frutlups
+    tag: v0.1.8
+    commit: 2d4f1c1ff76b057c79a106d6b586d4949110ed31
   external_inputs:
   - repository: graphab_optimization_kit
     path: graphab_optimization_kit/runtime/jars/graphab.jar
@@ -125,11 +130,19 @@ slices:
     - id: AL2-F1
       violated_invariant: a no-ledger project carries no ledger row
       prior_disposition: open
+      authority_action: owner note 003 authorizes exactly one bounded replay
+      coder_obligation: re-acquire the ledger under the frozen envelope and cite the rows
+      closure_proof: nine admitted rows per arm in joined_ledger.json
     prior_evidence:
     - path: 01_data/evidence/m002_s02_holistic_pass_001/partial_ledger.json
       sha256: 3abd8940443ae954af6a0408286bd729171ae5a3c6e214dd88a91c0294b04ace
     closure_proof:
     - Nine admitted rows per arm, or a preserved partial stop with the exact Java exception
+    claims_withdrawn: none
+    evidence_invalidated:
+    - the attempt-001 partial ledger is superseded, not deleted
+    minimum_rerun_set:
+    - the nine-case paired replay
   execution_envelope:
     timing_probe:
       command: python scripts/acquire_m002_s02_route_ledger.py --preflight
@@ -148,7 +161,7 @@ slices:
     - arm:candidate
     - order:baseline-first
     retained_bytes_max: 536870912
-    local_output_root: local_state/m002_s02_attempt_002/
+    local_output_root: local_state/m002_s02_attempt_{attempt}/
     cleanup: quarantine
     negative_result_handling: preserve_and_stop
     stopped_result_handling: preserve_and_stop

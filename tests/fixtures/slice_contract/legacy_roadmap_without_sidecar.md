@@ -2,6 +2,8 @@
 
 ### M001: Ledger
 
+Status: active
+
 Objective: add the ledger.
 
 Slices:

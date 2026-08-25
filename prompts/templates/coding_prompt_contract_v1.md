@@ -7,8 +7,9 @@ conforming renderer consumes from the sidecar; a rendered prompt carries none
 of them, and a renderer that cannot consume a slot must refuse rather than
 write. Sections marked *conditional* are removed entirely, marker line
 included, when the typed field is `none` or the flag is false — never left as
-placeholders. The metadata `attempt` line is removed when the entry declares
-no attempt. This preamble is scaffold documentation and is not rendered. The
+placeholders. The metadata `attempt` and `dispatch_authority` lines are
+removed when the entry declares no attempt or no dispatch authority (a
+frozen entry). This preamble is scaffold documentation and is not rendered. The
 legacy scaffold `prompts/templates/coding_prompt.md` is unchanged and remains
 the configured template for projects that have not opted in.
 
@@ -20,12 +21,14 @@ milestone: TBD:milestone
 slice: TBD:slice
 title: TBD:title
 role: coder
+authored_by: TBD:authored_by
 mode: TBD:mode
 strictness: TBD:strictness
 live: TBD:live
 corrective: TBD:corrective
 attempt: TBD:attempt
 status: TBD:status
+dispatch_authority: TBD:dispatch_authority
 ```
 
 ## Current State
@@ -128,7 +131,8 @@ activity is never a gate (`docs/template_framework/external_repository_roles.md`
 - Controlling ruling: TBD:controlling_ruling
 - Prior evidence identities: TBD:prior_evidence
 - Required closure proof: TBD:correction_closure_proof
-- Allowed files and claims: the write manifest above.
+- Allowed files and claims: exactly the write manifest above (derived; no
+  separate typed field).
 - Claims withdrawn or narrowed: TBD:claims_withdrawn
 - Evidence invalidated: TBD:evidence_invalidated
 - Minimum rerun set: TBD:minimum_rerun_set

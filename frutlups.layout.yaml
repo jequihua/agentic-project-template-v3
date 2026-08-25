@@ -257,6 +257,7 @@ slice_prompt_contract:
       - "config"
       - "self_report"
     reviewer:
+      - "review_prompt"
       - "review_report"
       - "evidence"
       - "analysis"
@@ -371,7 +372,8 @@ local_state:
   # source (strict JSON: contract_version, exact_paths, top_level_prefixes);
   # declared in the drive policy as oracle_exclusion_manifest. Recommended path:
   oracle_exclusion_manifest: "06_infra/oracle_exclusion_manifest.json"
-  oracle_content_bound_bytes: 16777216
+  # The oracle content bound (16 MiB) is a drive constant, not a declarable
+  # value; the pre-launch command below carries it literally.
   prelaunch_size_check: "python scripts/local_state_audit.py --limit-bytes 16777216 --exclusions 06_infra/oracle_exclusion_manifest.json"
 
 validation:

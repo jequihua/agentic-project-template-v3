@@ -32,6 +32,90 @@ SCRIPT_PATH = Path(__file__).resolve()
 PROJECT_ROOT = SCRIPT_PATH.parents[1]
 
 
+# --- The drive's released oracle exclusion manifest grammar (frutlups-drive
+# workspace._load_oracle_exclusions). The template does not define a second
+# dialect: this reader accepts exactly what the drive accepts and refuses the
+# rest, so a passing pre-launch check never disagrees with drive admission.
+GOVERNED_TOP_LEVEL = (".git", ".frutlups_drive", "local_state")
+REQUIRED_ORACLE_PATHS = ("05_governance/reviews/INDEX.md",)
+MAX_MANIFEST_BYTES = 64 * 1024
+MAX_MANIFEST_ENTRIES = 1_024
+
+
+class ExclusionManifestInvalid(Exception):
+    pass
+
+
+def _canonical_relative(value) -> bool:
+    if not isinstance(value, str) or not value or value != value.strip():
+        return False
+    if "\\" in value or value.startswith("/") or value.endswith("/"):
+        return False
+    if len(value) > 1 and value[1] == ":":
+        return False
+    parts = value.split("/")
+    return all(part not in ("", ".", "..") for part in parts)
+
+
+def load_exclusion_manifest(root: Path, relative) -> tuple[set, tuple]:
+    """Return (exact_paths, top_level_prefixes) or raise ExclusionManifestInvalid.
+    An absent declaration (None) or an absent file means no exclusions."""
+    if relative is None:
+        return set(), ()
+    rel_text = str(relative).replace("\\", "/")
+    manifest_path = root / rel_text
+    if not manifest_path.exists():
+        return set(), ()
+    if not _canonical_relative(rel_text) or rel_text.split("/", 1)[0] in GOVERNED_TOP_LEVEL:
+        raise ExclusionManifestInvalid("the declared path is not canonical")
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise ExclusionManifestInvalid("the declared file is unavailable")
+    data = manifest_path.read_bytes()
+    if len(data) > MAX_MANIFEST_BYTES:
+        raise ExclusionManifestInvalid(f"the declared file exceeds {MAX_MANIFEST_BYTES} bytes")
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        raise ExclusionManifestInvalid("the declared file is not valid UTF-8 JSON") from None
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != {"contract_version", "exact_paths", "top_level_prefixes"}
+        or payload.get("contract_version") != 1
+        or not isinstance(payload.get("exact_paths"), list)
+        or not isinstance(payload.get("top_level_prefixes"), list)
+    ):
+        raise ExclusionManifestInvalid("the manifest fields are malformed")
+    exact = payload["exact_paths"]
+    prefixes = payload["top_level_prefixes"]
+    if len(exact) + len(prefixes) > MAX_MANIFEST_ENTRIES:
+        raise ExclusionManifestInvalid(f"the manifest exceeds {MAX_MANIFEST_ENTRIES} entries")
+    if any(not _canonical_relative(item) for item in exact) or len(set(exact)) != len(exact):
+        raise ExclusionManifestInvalid("exact_paths must be unique canonical file paths")
+    if any(item.split("/", 1)[0] in GOVERNED_TOP_LEVEL for item in exact):
+        raise ExclusionManifestInvalid("exact_paths must remain inside the frozen surface")
+    for item in exact:
+        candidate = root / item
+        if candidate.exists() and candidate.is_dir():
+            raise ExclusionManifestInvalid("exact_paths must name files, not directories")
+    checked = []
+    for item in prefixes:
+        if not isinstance(item, str) or not item.endswith("/"):
+            raise ExclusionManifestInvalid("top_level_prefixes must be unique top-level directories ending in '/'")
+        directory = item[:-1]
+        if not _canonical_relative(directory) or "/" in directory or directory in GOVERNED_TOP_LEVEL:
+            raise ExclusionManifestInvalid("top_level_prefixes must be unique top-level directories ending in '/'")
+        checked.append(item)
+    if len(set(checked)) != len(checked):
+        raise ExclusionManifestInvalid("top_level_prefixes must be unique top-level directories ending in '/'")
+    if rel_text in exact or any(rel_text.startswith(prefix) for prefix in checked):
+        raise ExclusionManifestInvalid("the manifest cannot exclude its own frozen bytes")
+    if any(path.startswith(prefix) for path in exact for prefix in checked):
+        raise ExclusionManifestInvalid("exact_paths cannot duplicate a declared top-level prefix")
+    if any(req in exact or any(req.startswith(prefix) for prefix in checked) for req in REQUIRED_ORACLE_PATHS):
+        raise ExclusionManifestInvalid("the manifest cannot exclude a required oracle input")
+    return set(exact), tuple(sorted(checked))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=PROJECT_ROOT,
@@ -91,21 +175,21 @@ def main(argv: list[str] | None = None) -> int:
 
     print("\nRead-only: nothing was changed.")
     if args.limit_bytes is not None:
-        exact, prefixes = set(), ()
-        if args.exclusions is not None:
-            data = json.loads(args.exclusions.read_text(encoding="utf-8"))
-            exact = set(data.get("exact_paths", []))
-            prefixes = tuple(data.get("top_level_prefixes", []))
+        try:
+            exact, prefixes = load_exclusion_manifest(root, args.exclusions)
+        except ExclusionManifestInvalid as exc:
+            print(f"\nPre-launch size check: exclusion manifest invalid; {exc}; nothing was excluded")
+            return 1
         bound = core.audit_footprint(root, large_file_bytes=args.limit_bytes)
-        governed = (".git", ".frutlups_drive", "local_state")
         offenders = [
             (rel, size) for rel, size in bound.large_files
             if rel not in exact
             and not rel.startswith(prefixes)
-            and rel.split("/")[0] not in governed
+            and rel.split("/")[0] not in GOVERNED_TOP_LEVEL
         ]
-        print(f"\nPre-launch size check (bound {args.limit_bytes} bytes; "
-              f"{len(exact)} exact exclusions, {len(prefixes)} prefix exclusions):")
+        declared = "none declared" if args.exclusions is None or not (root / args.exclusions).exists() else \
+            f"{len(exact)} exact exclusions, {len(prefixes)} prefix exclusions"
+        print(f"\nPre-launch size check (bound {args.limit_bytes} bytes; {declared}):")
         if offenders:
             for rel, size in sorted(offenders):
                 print(f"  ABOVE BOUND  {rel}  {size} bytes")

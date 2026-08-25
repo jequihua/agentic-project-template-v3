@@ -20,6 +20,7 @@ Stdlib-only. See `scripts/README.md` and
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -37,6 +38,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Project root to audit (default: the template root).")
     parser.add_argument("--large-file-mb", type=float, default=core.LARGE_FILE_BYTES / (1024 * 1024),
                         help="Flag individual files at or above this size in MB.")
+    parser.add_argument("--limit-bytes", type=int, default=None,
+                        help="Pre-launch check: list undeclared files at or above this size and exit 1 "
+                             "when any exist (the drive's oracle content bound is 16777216).")
+    parser.add_argument("--exclusions", type=Path, default=None,
+                        help="The drive's oracle exclusion manifest (strict JSON: contract_version, "
+                             "exact_paths, top_level_prefixes); the same file the drive reads.")
     parser.add_argument("--top", type=int, default=10,
                         help="How many largest top-level directories / large files to show.")
     args = parser.parse_args(argv)
@@ -83,6 +90,28 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {core.human_bytes(size):>10}  {rel}")
 
     print("\nRead-only: nothing was changed.")
+    if args.limit_bytes is not None:
+        exact, prefixes = set(), ()
+        if args.exclusions is not None:
+            data = json.loads(args.exclusions.read_text(encoding="utf-8"))
+            exact = set(data.get("exact_paths", []))
+            prefixes = tuple(data.get("top_level_prefixes", []))
+        bound = core.audit_footprint(root, large_file_bytes=args.limit_bytes)
+        governed = (".git", ".frutlups_drive", "local_state")
+        offenders = [
+            (rel, size) for rel, size in bound.large_files
+            if rel not in exact
+            and not rel.startswith(prefixes)
+            and rel.split("/")[0] not in governed
+        ]
+        print(f"\nPre-launch size check (bound {args.limit_bytes} bytes; "
+              f"{len(exact)} exact exclusions, {len(prefixes)} prefix exclusions):")
+        if offenders:
+            for rel, size in sorted(offenders):
+                print(f"  ABOVE BOUND  {rel}  {size} bytes")
+            print("Declare each in the exclusion manifest or move it under local_state/.")
+            return 1
+        print("  no undeclared file at or above the bound")
     return 0
 
 

@@ -454,6 +454,9 @@ Important files:
 - `frutlups_modes.md`: `manual`, `semi-manual`, and `automated driver`.
 - `frutlups_driver_boundary.md`: what a conforming thin runner may and must not
   do; the template ships no runner.
+- `slice_prompt_contract.md`: the versioned, opt-in typed per-slice prompt
+  contract (sidecar YAML, exact write manifest, execution envelope, closure
+  record) that autonomous prompt generation renders from.
 - `migration_and_adoption.md`: how to adopt v3 in new or existing projects.
 - `security_and_local_state.md`: secret and local-state policy.
 - `front_repo_sync.md`: development repo to front-facing repo publication
@@ -950,6 +953,11 @@ operator manual, not here):
 - review reports carry exactly one verdict section per file, and later rounds
   use their own round-qualified files — the released planning tool refuses an
   ambiguous multi-verdict file rather than silently resolving it;
+- opt into the slice prompt contract
+  (`docs/template_framework/slice_prompt_contract.md`): typed sidecar entries
+  with exact write manifests, a complete execution envelope on every live
+  slice, bindings declared by name here and by value in the runner policy,
+  and the pre-launch size check run before the launch word;
 - expect governed self-recovery and governed stops, not silent failure: a
   seat that completes without delivering its declared artifacts is waited
   out and re-dispatched once at the corrective effort, and unresolvable
@@ -1239,9 +1247,10 @@ The tests check structural invariants such as:
 - frutlups layout config remains portable;
 - commit and PR policies are encoded;
 - front-repo sync safety rails exist and behave;
-- clone-only checks (shipped memory default, no machine-local paths, LF
-  hygiene) run while `Status` is still the scaffold default and skip once
-  the project is initialized.
+- the shipped memory-default check runs only while `Status` is still the
+  scaffold default; the machine-local-path and LF checks walk the
+  template-owned surfaces in every project, skipping the governed local
+  surfaces (`.frutlups_drive/`, `local_state/`).
 
 Tests do not replace human review. Reviews should still perform adversarial
 checks when a safety rail matters.

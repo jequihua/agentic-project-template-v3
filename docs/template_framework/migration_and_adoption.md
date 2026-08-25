@@ -57,19 +57,13 @@ documented commit.
 
 Three kinds of surface:
 
-- **Template-owned, overwritten from the new pin:** the framework docs under
-  `docs/template_framework/`, the initialization prompts, the prompt
-  templates under `prompts/templates/`, the `scripts/` lane,
-  `frutlups.layout.yaml`, `05_governance/current/review_protocol.md`,
-  `05_governance/current/question_policy.md`, and the scaffold test modules
-  the template ships, matched by name: `test_template_scaffold.py`,
-  `test_closure_convergence.py`, `test_memory_lane_contract.py`,
-  `test_feedback_safeguards.py`, `test_architect_operating_card.py`,
-  `test_external_repository_roles.py`, `test_okf_authoring_migration.py`,
-  `test_okf_navigation_view.py`, `test_okf_profile_checker.py`,
-  `test_okf_profile_fixtures.py`, and the fixture folders they read under
-  `tests/fixtures/`. Any other file under the
-  tests folder is the project's own and is never touched.
+- **Template-owned, overwritten from the new pin:** exactly the surfaces
+  declared under `template_owned_surfaces` in `frutlups.layout.yaml`: the
+  framework docs, the initialization prompts, the prompt templates, the
+  scripts lane, the fixture folders, the layout itself, the two current
+  protocols, and the scaffold test modules by name. A scaffold test keeps
+  that list equal to the shipped modules. Any other file under the tests
+  folder is the project's own and is never touched.
 - **Project-owned, never overwritten:** `PROJECT_STATE.md`, `MILESTONES.md`,
   the content of the numbered workspaces, the coding and review prompt
   folders, `05_governance/reviews/`, `05_governance/human_owner_notes/`,
@@ -94,6 +88,21 @@ When not refreshing: record the disagreement in
 `05_governance/current/known_divergences.md` and continue on the
 source-of-truth order in `CLAUDE.md`. The checked-in snapshot is evidence of
 what the template said at the pin, not authority over the tools installed now.
+
+## Opting Into The Slice Prompt Contract
+
+Opt-in is one reviewed migration step with exactly two effects: add a sidecar
+(`<roadmap-stem>.slices.yaml`) beside each selected prose roadmap, and set the
+layout's `prompts.coding_template` to the contract-v1 scaffold
+`prompts/templates/coding_prompt_contract_v1.md`. Rollback reverses both in one
+step. Absent sidecar plus the legacy template path is legacy v3 behavior
+byte-for-byte. Validate with the reference checker before dispatching:
+
+```text
+python scripts/slice_contract_check.py --sidecar 03_experiments/active_roadmap.slices.yaml
+```
+
+Full contract: `docs/template_framework/slice_prompt_contract.md`.
 
 ## Front Matter (OKF Profile)
 

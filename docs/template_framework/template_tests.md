@@ -39,20 +39,22 @@ Test structural invariants and contracts, not prose:
   hard-assert `Memory mode: none`); assert membership in the allowed set instead,
   so the test stays downstream-safe.
 
-## Clone-Only Tests
+## Clone-Only Tests And Template-Source Purity
 
-A few checks protect the template as shipped, not a project built from it:
-the shipped `Memory mode: none` default, the absence of this development
-machine's local paths anywhere in the tree, and the binary-safe LF state of
-every distributable text file. A populated project legitimately changes all
-three (it picks a memory mode; it imports byte-preserved corpora). These
-tests are therefore scoped by the scaffold's own `Status` line: they run
-while `PROJECT_STATE.md` still says `Status: initialized template scaffold`
-and report as skipped, never as failures, once framework initialization
-replaces it. Project invariants that must hold forever (no machine-local
-paths in reviewed artifacts, for example) are the artifact preflight's job
-and stay unconditional. A project that never changes `Status` keeps the
-clone-only checks active.
+One check protects the template as shipped, not a project built from it: the
+shipped `Memory mode: none` default. It is scoped by the scaffold's own
+`Status` line - it runs while `PROJECT_STATE.md` still says
+`Status: initialized template scaffold` and reports as skipped, never as a
+failure, once framework initialization replaces it.
+
+The template-source purity checks (no machine-local paths, binary-safe LF)
+run in every project. They walk only the template-owned surfaces declared
+under `template_owned_surfaces` in `frutlups.layout.yaml` and skip the
+governed local surfaces (`.frutlups_drive/`, `local_state/`), so a run store
+or an imported corpus never trips them while the same defect in distributable
+source still fails; a guard test proves both directions. Project invariants
+over reviewed artifacts are the artifact preflight's job and stay
+unconditional.
 
 ## Optional Tools Must Not Be Imported
 

@@ -31,6 +31,22 @@ large data caches). Keep it short; it is a pointer, not live state.
 | --- | --- | --- | --- | --- |
 | TBD | TBD | TBD | TBD | TBD |
 
+## Snapshot Exclusions (driven projects)
+
+When an autonomous runner freezes pass boundaries, large or generated local
+outputs must either live under `local_state/` or be declared in the runner's
+exclusion manifest. That manifest is the runner's own strict JSON file
+(`contract_version`, `exact_paths`, `top_level_prefixes`), declared in the
+runner policy and recommended at the path named by `local_state.oracle_exclusion_manifest`
+in `frutlups.layout.yaml`. Do not duplicate its entries here: record the
+manifest path once, and one sentence per entry on why it is excluded. The
+pre-launch check that reads the same file is the layout's
+`local_state.prelaunch_size_check` command (see
+`docs/template_framework/security_and_local_state.md`).
+
+- exclusion manifest path:
+- entries and reasons:
+
 ## Seeing And Cleaning Local Footprint
 
 Rebuildable residue (caches, coverage, build output) can be surfaced and removed

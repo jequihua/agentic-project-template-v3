@@ -64,6 +64,17 @@ frontier.
 - recorded verdicts (`pass` / `needs_work` / `blocked` / `override`) move the
   frontier — never manual roadmap edits.
 
+## Slice Prompt Contract Projects
+
+When the project opts into the slice prompt contract
+(`docs/template_framework/slice_prompt_contract.md`): every slice is a typed
+sidecar entry beside the roadmap; a live entry carries a complete execution
+envelope, and every environment binding it names must have its value declared
+in the runner's policy or admission refuses; sidecar entries are authored by
+the architect/reviewer or the human owner, never by a coder seat or a runner;
+a corrective entry becomes dispatchable only through the operating tool's
+governed validation. Run the pre-launch size check before the launch word.
+
 ## Thin Driver Direction
 
 Any runner is external: this scaffold ships none and defines only the

@@ -14,6 +14,13 @@ TBD
 
 TBD
 
+For a slice under the slice prompt contract, the frozen authority is the
+entry's execution envelope (`docs/template_framework/slice_prompt_contract.md`):
+timing probe, agent and subprocess budgets, expected and hard walls, binding
+names, retention bound, local output root, cleanup, and stopped-result
+handling. Record here only the human approval and the launch word against
+that envelope; a live slice without a complete envelope is not dispatchable.
+
 ## Safe To Record
 
 TBD

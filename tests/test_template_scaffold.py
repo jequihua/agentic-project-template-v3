@@ -44,11 +44,68 @@ _RELEASE_IGNORE_GLOBS = ("*.egg-info", ".codex_tmp*", "*.log", ".coverage", "tes
 # repeated here: they are covered exactly by the glob tuple above.
 _RELEASE_IGNORE_DIR_NAMES = frozenset({
     ".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
-    "venv", "env", "node_modules", "local_state", ".local", "build", "dist",
+    "venv", "env", "node_modules", "local_state", ".local", ".frutlups_drive", "build", "dist",
     "htmlcov", ".idea", ".vscode", "tmp", "temp",
     "llloom_memory", "memory_root", ".ipynb_checkpoints",
 })
 _RELEASE_IGNORE_SUFFIXES = (".pyc", ".pyo")
+# Governed local surfaces: never distributable, skipped by every purity scan,
+# identical to the drive's internally ignored set (frutlups.layout.yaml local_state).
+_GOVERNED_LOCAL_SURFACES = ("local_state", ".frutlups_drive")
+_MACHINE_FRAGMENTS = (
+    "C:" + "\\Users\\dev",
+    "repos" + "_dev",
+    "agentic-project-template" + "-v2" + "-dev",
+)
+
+
+def _template_owned_paths(root: Path) -> list[Path]:
+    """Template-owned surfaces declared under ``template_owned_surfaces`` in
+    ``frutlups.layout.yaml`` (raw-text read; the tests never import a YAML
+    parser). These are the surfaces a project refreshes from the template and
+    the only surfaces the purity scans walk."""
+    text = (root / "frutlups.layout.yaml").read_text(encoding="utf-8")
+    block = text.split("\ntemplate_owned_surfaces:\n", 1)[1].split("\nlocal_state:\n", 1)[0]
+    paths: list[Path] = []
+    for line in block.splitlines():
+        match = re.match(r'^\s+-\s+"([^"]+)"$', line)
+        if match:
+            paths.append(root / match.group(1))
+    return paths
+
+
+def _owned_files(root: Path, surfaces: list[Path]):
+    """Regular files under the given surfaces, minus governed local surfaces and
+    release-ignored residue."""
+    for base in surfaces:
+        if base.is_file():
+            candidates = [base]
+        elif base.is_dir():
+            candidates = base.rglob("*")
+        else:
+            continue
+        for p in candidates:
+            if p.is_symlink() or not p.is_file():
+                continue
+            rel = p.relative_to(root)
+            if any(part in _GOVERNED_LOCAL_SURFACES for part in rel.parts):
+                continue
+            if _is_release_ignored(rel):
+                continue
+            yield p
+
+
+def _machine_path_offenders(root: Path, surfaces: list[Path]) -> list[str]:
+    """Template-owned text files carrying this development machine's paths."""
+    offenders: list[str] = []
+    for p in _owned_files(root, surfaces):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if any(fragment in text for fragment in _MACHINE_FRAGMENTS):
+            offenders.append(p.relative_to(root).as_posix())
+    return sorted(offenders)
 
 
 def _is_release_ignored(rel: Path) -> bool:
@@ -70,14 +127,20 @@ def _is_release_ignored(rel: Path) -> bool:
     return rel.suffix in _RELEASE_IGNORE_SUFFIXES
 
 
-def _distributable_text_crlf(root: Path) -> list[str]:
+def _distributable_text_crlf(root: Path, surfaces: list[Path] | None = None) -> list[str]:
     """Sorted relative POSIX paths of shipped UTF-8 text files under ``root`` that carry
     CRLF. Does not follow symlinked files or escape ``root``; skips release-ignored
     metadata; and treats a file as text only when it is strict UTF-8 with no NUL byte, so
-    a binary payload containing ``\\r\\n`` is never reported as distributable text."""
+    a binary payload containing ``\\r\\n`` is never reported as distributable text.
+    With ``surfaces`` the walk is restricted to those template-owned paths and skips the
+    governed local surfaces, so the check runs unchanged inside a populated project."""
     root = root.resolve()
     offenders: list[str] = []
-    for p in root.rglob("*"):
+    if surfaces is not None:
+        files = _owned_files(root, [s.resolve() for s in surfaces])
+    else:
+        files = root.rglob("*")
+    for p in files:
         if p.is_symlink() or not p.is_file():
             continue
         rel = p.relative_to(root)
@@ -554,28 +617,48 @@ class TemplateScaffoldTests(unittest.TestCase):
         self.assertIn("install/source reference", text)
         self.assertIn("guide", text)
 
-    @_CLONE_ONLY
     def test_template_has_no_machine_local_paths(self) -> None:
-        """A GitHub template clone must not inherit this development machine's
-        local paths or repository names."""
-        forbidden = (
-            "C:" + "\\Users\\dev",
-            "repos" + "_dev",
-            "agentic-project-template" + "-v2" + "-dev",
-        )
-        for path in ROOT.rglob("*"):
-            if (
-                not path.is_file()
-                or ".git" in path.parts
-                or self._is_ignored_local_path(path)
-            ):
-                continue
-            try:
-                text = path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                continue
-            for fragment in forbidden:
-                self.assertNotIn(fragment, text, f"{path} contains {fragment}")
+        """Template-owned surfaces must not carry this development machine's
+        local paths or repository names - in the template and in every project
+        that refreshes them. Governed local surfaces (run stores, local state)
+        are never scanned, so the check stays green in a populated project and
+        still fails on the same defect in distributable source."""
+        offenders = _machine_path_offenders(ROOT, _template_owned_paths(ROOT))
+        self.assertEqual(offenders, [], f"machine-local content in template-owned surfaces: {offenders[:3]}")
+
+    def test_purity_scans_skip_governed_surfaces_but_catch_owned_defects(self) -> None:
+        """Both directions of the purity property: a CRLF/machine-path defect in a
+        governed local surface must not fail; the same defect in a template-owned
+        surface must fail."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "frutlups.layout.yaml").write_text(
+                "x: 1\n\ntemplate_owned_surfaces:\n  directories:\n"
+                "    - \"docs/template_framework\"\n  files:\n"
+                "    - \"frutlups.layout.yaml\"\n\nlocal_state:\n  root: \"local_state/\"\n",
+                encoding="utf-8", newline="\n",
+            )
+            owned = root / "docs" / "template_framework"
+            owned.mkdir(parents=True)
+            governed = root / ".frutlups_drive" / "runs" / "run_001"
+            governed.mkdir(parents=True)
+            (root / "local_state").mkdir()
+            defect = b"line\r\nPath " + _MACHINE_FRAGMENTS[0].encode() + b"\\x\n"
+            (governed / "adapter.md").write_bytes(defect)
+            (root / "local_state" / "note.md").write_bytes(defect)
+            surfaces = _template_owned_paths(root)
+            self.assertEqual(_distributable_text_crlf(root, surfaces), [])
+            self.assertEqual(_machine_path_offenders(root, surfaces), [])
+            (owned / "guide.md").write_bytes(defect)
+            self.assertEqual(_distributable_text_crlf(root, surfaces), ["docs/template_framework/guide.md"])
+            self.assertEqual(_machine_path_offenders(root, surfaces), ["docs/template_framework/guide.md"])
+
+    def test_layout_names_every_shipped_scaffold_test_module(self) -> None:
+        """The template-owned surface list is the refresh contract; every shipped
+        test module must be named there (and nothing that does not exist)."""
+        listed = {p.name for p in _template_owned_paths(ROOT) if p.suffix == ".py"}
+        on_disk = {p.name for p in (ROOT / "tests").glob("test_*.py")}
+        self.assertEqual(listed, on_disk)
 
     def test_clone_only_scope_follows_project_state_status(self) -> None:
         """Clone-only integrity checks run while PROJECT_STATE.md still carries
@@ -1825,7 +1908,6 @@ class TemplateScaffoldTests(unittest.TestCase):
                 f"{context} status is neither active nor inactive",
             )
 
-    @_CLONE_ONLY
     def test_standalone_gitattributes_enforces_binary_safe_lf(self) -> None:
         # When this template becomes the root of its own Git repository, its .gitattributes
         # must enforce a binary-safe LF checkout for the whole tree so the release bytes are
@@ -1838,8 +1920,8 @@ class TemplateScaffoldTests(unittest.TestCase):
         self.assertNotIn("* text eol=lf", lines)
         # No shipped distributable UTF-8 text file carries CRLF. Release-ignored metadata
         # (e.g. an editable-install `*.egg-info/`) and binary payloads are not scanned.
-        crlf = _distributable_text_crlf(ROOT)
-        self.assertEqual(crlf, [], f"shipped text files contain CRLF: {crlf[:3]}")
+        crlf = _distributable_text_crlf(ROOT, _template_owned_paths(ROOT))
+        self.assertEqual(crlf, [], f"template-owned text files contain CRLF: {crlf[:3]}")
 
     def test_release_ignore_excludes_editable_install_egg_info(self) -> None:
         # An ignored editable-install `.egg-info/PKG-INFO` with CRLF must not be scanned.

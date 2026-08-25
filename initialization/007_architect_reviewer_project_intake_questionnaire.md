@@ -309,6 +309,9 @@ acceptance criteria.
 ## First Roadmap Shape
 
 Create a first roadmap that is milestone-oriented and modest. Prefer 3-7 slices.
+Under the slice prompt contract (`docs/template_framework/slice_prompt_contract.md`),
+each slice is additionally a typed entry in the roadmap's sidecar; the prose
+fields below remain the human narrative.
 
 For each slice, include:
 

@@ -1,6 +1,8 @@
 # === Local state ===
 local_state/
 .local/
+# frutlups-drive run store (immutable lifecycles, STOP sentinel); governed local surface
+.frutlups_drive/
 
 # === Python caches and build ===
 __pycache__/

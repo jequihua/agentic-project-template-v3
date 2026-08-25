@@ -15,6 +15,27 @@ For live work, use `06_infra/live_validation_gate.md`.
 
 For local state policy, use `LOCAL_STATE_NOT_COMMITTED.md`.
 
+## Governed Local Surfaces And The Pre-Launch Size Check
+
+Two surfaces are governed local state and never distributable: the runner's
+run store `.frutlups_drive/` and the local-state root `local_state/`
+(`frutlups.layout.yaml`, `local_state.governed_ignored_surfaces`). The
+template-source purity checks skip them and walk only the template-owned
+surfaces (`template_owned_surfaces`), so a populated project keeps the same
+checks green while a defect in distributable source still fails.
+
+Live and generated outputs go under `local_state/` by default. Anything
+larger than the runner's oracle content bound (16 MiB) that must stay outside
+it is declared in the runner's JSON exclusion manifest - the single
+machine-read exclusion source; the Markdown roots table only references it.
+Before the launch word, run the read-only pre-launch check, which reads that
+same JSON file and exits 1 while any undeclared file sits at or above the
+bound:
+
+```powershell
+python scripts/local_state_audit.py --limit-bytes 16777216 --exclusions 06_infra/oracle_exclusion_manifest.json
+```
+
 ## Rebuildable Local State
 
 A repository can be commit-clean and still be large, slow, or hard to delete

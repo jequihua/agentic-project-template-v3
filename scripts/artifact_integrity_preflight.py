@@ -31,6 +31,12 @@ VOLATILE_RES = (
     re.compile(r"\bonly (?:a|[0-9]+) (?:row|rows|entry|entries)\b", re.IGNORECASE),
     re.compile(r"\b(?:active|latest) (?:review )?prompt (?:is )?`?0[0-9]{2}\b", re.IGNORECASE),
 )
+# Dispatch-readiness rules: a ready artifact (frontmatter status, or the workflow
+# metadata block's status) may carry no unresolved sentinel and no residue of an
+# optional section that should have been removed (slice prompt contract v1).
+READY_SENTINELS = ("TBD", "<value>", "<path>", "<one move>")
+READY_RESIDUE_PHRASES = ("delete this section", "conditional: rendered only", "fills or deletes")
+WORKFLOW_STATUS_RE = re.compile(r"^status:\s*([A-Za-z_-]+)\s*$")
 HISTORICAL_WORDS = (
     "historical",
     "nonexistent",
@@ -245,6 +251,22 @@ def _profile_summary(records: list[dict]) -> dict:
     return {layer: dict(sorted(counts.items())) for layer, counts in layers.items()}
 
 
+def _workflow_status(lines: list[str]) -> str:
+    """Status declared in the first fenced workflow-metadata block, if any."""
+    fenced = False
+    for line in lines:
+        if line.startswith("```"):
+            if fenced:
+                return ""
+            fenced = True
+            continue
+        if fenced:
+            match = WORKFLOW_STATUS_RE.match(line.strip())
+            if match:
+                return match.group(1)
+    return ""
+
+
 def check_artifact(
     artifact: Path,
     *,
@@ -266,10 +288,23 @@ def check_artifact(
     fields, frontmatter_error = _frontmatter(text)
     if require_frontmatter and frontmatter_error:
         findings.append(Finding("error", "frontmatter", rel, 1, "", frontmatter_error))
-    if fields is not None and fields.get("status", "").lower() == "ready" and "TBD" in text:
-        findings.append(
-            Finding("error", "ready_tbd", rel, 1, "status: ready", "ready artifact contains TBD")
-        )
+    status = (fields or {}).get("status", "") or _workflow_status(lines)
+    if status.lower() == "ready":
+        for sentinel in READY_SENTINELS:
+            if sentinel in text:
+                findings.append(
+                    Finding("error", "ready_tbd", rel, 1, "status: ready",
+                            f"ready artifact contains unresolved sentinel {sentinel!r}")
+                )
+                break
+        lowered = text.lower()
+        for phrase in READY_RESIDUE_PHRASES:
+            if phrase in lowered:
+                findings.append(
+                    Finding("error", "ready_optional_section_residue", rel, 1, "status: ready",
+                            f"ready artifact carries deleted-section residue {phrase!r}")
+                )
+                break
 
     for number, line in enumerate(lines, 1):
         context = " ".join(lines[max(0, number - 4) : min(len(lines), number + 3)]).lower()

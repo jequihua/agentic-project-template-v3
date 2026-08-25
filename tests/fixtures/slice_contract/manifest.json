@@ -1,0 +1,848 @@
+{
+  "checker": "scripts/slice_contract_check.py",
+  "contract_version": 1,
+  "fixtures": [
+    {
+      "args": {},
+      "description": "Positive all-fields sidecar: one routine ready slice, one live corrective attempt-002 slice.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "all_fields",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/all_fields.slices.yaml",
+      "sha256": "b202d88b66214199fb48acd97ba0f7d13a42a235afc05b8a28fa1d6ce2ee73fb",
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "Canonical rendering of the routine slice: no conditional sections, no attempt line.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "all_fields_rendered_m001_s01",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/all_fields_rendered_m001_s01.md",
+      "sha256": "be75003168ba994db96fd3fcd1b7d734266ef6a1c0574e50774ec6379761f424",
+      "tags": [
+        "positive",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "attempt": 1,
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M002-S02"
+      },
+      "description": "Canonical rendering of the live corrective slice for attempt 001: every conditional section, resolved attempt paths.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "all_fields_rendered_m002_s02_attempt_001",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/all_fields_rendered_m002_s02_attempt_001.md",
+      "sha256": "616d21e587042624b3dee3827f56cd4a53e6ff1e542877c7360f7a70ec681842",
+      "tags": [
+        "positive",
+        "render",
+        "attempts"
+      ]
+    },
+    {
+      "args": {
+        "attempt": 2,
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M002-S02"
+      },
+      "description": "Canonical rendering of the live corrective slice for attempt 002: every conditional section, resolved attempt paths.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "all_fields_rendered_m002_s02_attempt_002",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/all_fields_rendered_m002_s02_attempt_002.md",
+      "sha256": "26daab361aeb47f5acad00f0e5579c1a86f6a485f41c9d0151061add059a5fa7",
+      "tags": [
+        "positive",
+        "render",
+        "attempts"
+      ]
+    },
+    {
+      "args": {},
+      "description": "At most one attempt token per path.",
+      "expected": {
+        "codes": [
+          "attempt_token_multiple"
+        ],
+        "result": "fail"
+      },
+      "id": "attempt_token_multiple",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/attempt_token_multiple.slices.yaml",
+      "sha256": "9eab4678ded5ba2128b0f922dc29bd7cb641e2bd8e9196053c8952bdfa780c94",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Under v1 the coder may not own the review prompt.",
+      "expected": {
+        "codes": [
+          "role_type_incompatible"
+        ],
+        "result": "fail"
+      },
+      "id": "coder_owned_review_prompt",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/coder_owned_review_prompt.slices.yaml",
+      "sha256": "b97b284aed5a2f27bb45d0c204ad66b13c9d8c5cc443165dacb5d1c8afde2023",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The coder may never own a review report.",
+      "expected": {
+        "codes": [
+          "role_type_incompatible"
+        ],
+        "result": "fail"
+      },
+      "id": "coder_owned_review_report",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/coder_owned_review_report.slices.yaml",
+      "sha256": "48ba6197fa589244bfae0044c2afd8aac69708f0fe940903fc5a80744ef9113d",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The coder may never own a verdict record.",
+      "expected": {
+        "codes": [
+          "role_type_incompatible"
+        ],
+        "result": "fail"
+      },
+      "id": "coder_owned_verdict_record",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/coder_owned_verdict_record.slices.yaml",
+      "sha256": "2728b36c339661cb1b5537cfad817a06bcb6991cf4b90b75ce918e678cf9af9d",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Corrective slices require an attempt identity.",
+      "expected": {
+        "codes": [
+          "attempt_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "corrective_without_attempt",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/corrective_without_attempt.slices.yaml",
+      "sha256": "d1d811d45e5bfcd7207086a405b342458563912f259516cfc79a7e51feaf91b1",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A corrective slice must name its controlling findings.",
+      "expected": {
+        "codes": [
+          "correction_findings_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "corrective_without_findings",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/corrective_without_findings.slices.yaml",
+      "sha256": "79ed19859404e30d9722fa16c3d6109bb55a4ad43db90283f0076f9e72887e85",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A corrective slice must name the controlling ruling or the dispute record.",
+      "expected": {
+        "codes": [
+          "correction_ruling_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "corrective_without_ruling",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/corrective_without_ruling.slices.yaml",
+      "sha256": "81e8ecb9b478ae13e7d21cd7c6695ef86a89a64aad26373361d8aa2c5dce3d03",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The same slice id is declared twice.",
+      "expected": {
+        "codes": [
+          "duplicate_slice"
+        ],
+        "result": "fail"
+      },
+      "id": "duplicate_slice",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/duplicate_slice.slices.yaml",
+      "sha256": "7aac0a3fbcf0d381783d969a2c8a4cf7419feb38d1c195b7511c4cc54821955b",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A binding may carry only a name and a value hash, never the value.",
+      "expected": {
+        "codes": [
+          "envelope_binding_value_present"
+        ],
+        "result": "fail"
+      },
+      "id": "envelope_binding_value_present",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/envelope_binding_value_present.slices.yaml",
+      "sha256": "8c1124a1650bfdadfc3e9f264c6cbe1eee961414ce1a6c3ab60fe533633a3e92",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "An envelope without a hard wall is incomplete.",
+      "expected": {
+        "codes": [
+          "envelope_field_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "envelope_missing_hard_wall",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/envelope_missing_hard_wall.slices.yaml",
+      "sha256": "ad5c540c14c79502fa60a2db69a21181864ab3ecfd201a88be9fb9bf81014db3",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "create_fresh_per_attempt needs exactly one attempt token in the path.",
+      "expected": {
+        "codes": [
+          "attempt_token_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "fresh_per_attempt_without_token",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/fresh_per_attempt_without_token.slices.yaml",
+      "sha256": "7cb005d08a8808660fb5fd52e7550e11db055b903d883d886c428b4023663859",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A frozen entry validates without a dispatch authority and is not current work.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "frozen_entry_valid",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/frozen_entry_valid.slices.yaml",
+      "sha256": "f34a9a21d260042a9debf7c8fd22ebe9ff9fa3a28caf21c09a9323949c3d4750",
+      "tags": [
+        "positive",
+        "status"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A reserved review-report path cannot be relabelled governance_record to bypass the role fence.",
+      "expected": {
+        "codes": [
+          "reserved_artifact_mislabeled",
+          "role_type_incompatible"
+        ],
+        "result": "fail"
+      },
+      "id": "governance_record_label_on_reserved_path",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/governance_record_label_on_reserved_path.slices.yaml",
+      "sha256": "7584668d0e6acf974b2a9166fa1bc6e7be872de6274475bbb6047be9a37b45ec",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A prose roadmap with no sidecar is legacy; nothing about it changes.",
+      "expected": {
+        "codes": [],
+        "result": "legacy"
+      },
+      "id": "legacy_roadmap_without_sidecar",
+      "mode": "document",
+      "path": "tests/fixtures/slice_contract/legacy_roadmap_without_sidecar.md",
+      "sha256": "2d2cf36ec57e8f239219ca1565c500a41049272bed1161120c693b653041cf2f",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A live slice must carry a complete execution envelope.",
+      "expected": {
+        "codes": [
+          "envelope_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "live_without_envelope",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/live_without_envelope.slices.yaml",
+      "sha256": "2870efacdcea4f2b1efbd7e3fa6f22c44870e530ec57ba692e4522d26582a58c",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Live outputs must land under the local-state root.",
+      "expected": {
+        "codes": [
+          "local_output_root_outside_local_state"
+        ],
+        "result": "fail"
+      },
+      "id": "local_output_root_outside_local_state",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/local_output_root_outside_local_state.slices.yaml",
+      "sha256": "1bff399b757d7ad8d0d39b78a957fac67bded715ae4bb110092334dcdacf6b79",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The objective block is absent.",
+      "expected": {
+        "codes": [
+          "missing_field"
+        ],
+        "result": "fail"
+      },
+      "id": "missing_required_field",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/missing_required_field.slices.yaml",
+      "sha256": "42a33fc0c5851f9fe5550d9f677670874e15262cc99ed166cd244de340e5e109",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Old-consumer fence fixture component; evaluated externally against the released legacy consumer (P4).",
+      "expected": {
+        "codes": [],
+        "result": "old_consumer_refusal"
+      },
+      "id": "optin_project_for_old_consumer_README_md",
+      "mode": "external",
+      "path": "tests/fixtures/slice_contract/optin_project_for_old_consumer/README.md",
+      "sha256": "c24ed39d1a679968be517463094fdcaca4c1c129301a44aef4618f1a0a3b055e",
+      "tags": [
+        "external",
+        "p4"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Old-consumer fence fixture component; evaluated externally against the released legacy consumer (P4).",
+      "expected": {
+        "codes": [],
+        "result": "old_consumer_refusal"
+      },
+      "id": "optin_project_for_old_consumer_active_roadmap_md",
+      "mode": "external",
+      "path": "tests/fixtures/slice_contract/optin_project_for_old_consumer/active_roadmap.md",
+      "sha256": "fa433ac932683a9fa1018e773af03c2b710b7fefc6eb5d661159bd43bc27477b",
+      "tags": [
+        "external",
+        "p4"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Old-consumer fence fixture component; evaluated externally against the released legacy consumer (P4).",
+      "expected": {
+        "codes": [],
+        "result": "old_consumer_refusal"
+      },
+      "id": "optin_project_for_old_consumer_active_roadmap_slices_yaml",
+      "mode": "external",
+      "path": "tests/fixtures/slice_contract/optin_project_for_old_consumer/active_roadmap.slices.yaml",
+      "sha256": "93cdb31d6558eb44199a0246f958a02a02c0ac515ae17fe907432889740be58d",
+      "tags": [
+        "external",
+        "p4"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Old-consumer fence fixture component; evaluated externally against the released legacy consumer (P4).",
+      "expected": {
+        "codes": [],
+        "result": "old_consumer_refusal"
+      },
+      "id": "optin_project_for_old_consumer_layout_optin_delta_yaml",
+      "mode": "external",
+      "path": "tests/fixtures/slice_contract/optin_project_for_old_consumer/layout_optin_delta.yaml",
+      "sha256": "453d7d7623f4f67459866305bc26fc9cfabdd776cada7b106c2c980db9bafbe3",
+      "tags": [
+        "external",
+        "p4"
+      ]
+    },
+    {
+      "args": {
+        "sidecars": [
+          "projections_aligned_a.slices.yaml",
+          "projections_aligned_b.slices.yaml"
+        ]
+      },
+      "description": "Two projections declaring identical entries align.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "projections_aligned",
+      "mode": "align",
+      "path": "tests/fixtures/slice_contract/projections_aligned_b.slices.yaml",
+      "sha256": "b202d88b66214199fb48acd97ba0f7d13a42a235afc05b8a28fa1d6ce2ee73fb",
+      "tags": [
+        "positive",
+        "align"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The active-projection sidecar used by the alignment fixtures; valid on its own.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "projections_aligned_a",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/projections_aligned_a.slices.yaml",
+      "sha256": "b202d88b66214199fb48acd97ba0f7d13a42a235afc05b8a28fa1d6ce2ee73fb",
+      "tags": [
+        "positive",
+        "align"
+      ]
+    },
+    {
+      "args": {
+        "sidecars": [
+          "projections_aligned_a.slices.yaml",
+          "projections_mismatch_b.slices.yaml"
+        ]
+      },
+      "description": "Same slice id with a differing entry across projections fails closed.",
+      "expected": {
+        "codes": [
+          "projection_entry_mismatch"
+        ],
+        "result": "fail"
+      },
+      "id": "projections_mismatch",
+      "mode": "align",
+      "path": "tests/fixtures/slice_contract/projections_mismatch_b.slices.yaml",
+      "sha256": "5054531cff16a861c12d51a7fe328cf2b5adde0a7143e6c0bc74a0c3a29b9360",
+      "tags": [
+        "align"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A ready entry must record its dispatch authority.",
+      "expected": {
+        "codes": [
+          "dispatch_authority_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "ready_without_dispatch_authority",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/ready_without_dispatch_authority.slices.yaml",
+      "sha256": "a7e482f57ca51decefb92a0b57bf21a332bdbdcd2413d6cb0204701b33af2051",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {
+        "attempt": 2,
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M002-S02"
+      },
+      "description": "An attempt-002 prompt whose write targets resolve to attempt 001 reuses history.",
+      "expected": {
+        "codes": [
+          "rendered_attempt_path_reuse",
+          "rendered_manifest_row_missing",
+          "rendered_value_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_attempt_path_reuse",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_attempt_path_reuse.md",
+      "sha256": "09790294f6b2005f9f2264731175cd72442c7f02f449b25cdc8374487f10ffb3",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A not-applicable section survived with its marker.",
+      "expected": {
+        "codes": [
+          "rendered_section_residue",
+          "rendered_section_unexpected"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_deleted_section_residue",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_deleted_section_residue.md",
+      "sha256": "551109ef64d5dd3b849133bd75ccf41e7f49792b99a2af979af0368cf454f132",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A write-manifest row was lost in rendering.",
+      "expected": {
+        "codes": [
+          "rendered_manifest_row_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_missing_manifest_row",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_missing_manifest_row.md",
+      "sha256": "b19f64f45a2275c64ff5bed6a954082cc364ff02f7a680c1279e399ce7761438",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A slot token survived rendering.",
+      "expected": {
+        "codes": [
+          "rendered_sentinel_residue"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_sentinel_residue",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_sentinel_residue.md",
+      "sha256": "a81ce2bbc225f48669328d7ea86b0353b5eb1ee7435344e62f69f39bc2db1860",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A review report without the closure record.",
+      "expected": {
+        "codes": [
+          "closure_section_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "review_report_closure_missing",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_closure_missing.md",
+      "sha256": "cbc50d31a409fc674ea5ec5dfbbc6b1c9514678b426edb842a562840d1a3d7df",
+      "tags": [
+        "review",
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The evidence line must immediately follow the status line.",
+      "expected": {
+        "codes": [
+          "objective_evidence_line_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "review_report_closure_missing_evidence_line",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_closure_missing_evidence_line.md",
+      "sha256": "ca678e9e7c86c0a534284cd7406ed8c7af1cbbfede1a383570ed1681c006c738",
+      "tags": [
+        "review",
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Exact closure record before the unchanged verdict footer; pass with not_achieved is a legal receipt.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "review_report_closure_valid",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_closure_valid.md",
+      "sha256": "060867b68cb3400ea09e4ead85b18b9ad109746bf606d2e1d2eaa99a35584a90",
+      "tags": [
+        "review",
+        "positive"
+      ]
+    },
+    {
+      "args": {},
+      "description": "An objective line inside the verdict section is invalid.",
+      "expected": {
+        "codes": [
+          "objective_status_in_verdict"
+        ],
+        "result": "fail"
+      },
+      "id": "review_report_status_in_verdict",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_status_in_verdict.md",
+      "sha256": "09d0557a7b631145ab54e67166b50163d135d8e4eeb475ec4d41e807863d2ef9",
+      "tags": [
+        "review",
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "An unresolved <value> sentinel in non-goals is a hard error.",
+      "expected": {
+        "codes": [
+          "sentinel_residue"
+        ],
+        "result": "fail"
+      },
+      "id": "sentinel_angle_value",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/sentinel_angle_value.slices.yaml",
+      "sha256": "2ad3f69af189162302a3631c36432b0f1d1ea2b8115e7c96be77844f12d00d63",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "An unresolved TBD in the task is a hard error.",
+      "expected": {
+        "codes": [
+          "sentinel_residue"
+        ],
+        "result": "fail"
+      },
+      "id": "sentinel_tbd",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/sentinel_tbd.slices.yaml",
+      "sha256": "59c418857d0da8f3122ad0a2a4f10f33f7327ccc59e7b6909938458774bdc993",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A coder seat may not author a sidecar entry.",
+      "expected": {
+        "codes": [
+          "authored_by_invalid"
+        ],
+        "result": "fail"
+      },
+      "id": "sidecar_authored_by_coder",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/sidecar_authored_by_coder.slices.yaml",
+      "sha256": "fbc7419a438ff33cfc3e9e7eb07bbafd5efe63078b481bbaaa8c0d4e839e1ab0",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A runner may not author a sidecar entry.",
+      "expected": {
+        "codes": [
+          "authored_by_invalid"
+        ],
+        "result": "fail"
+      },
+      "id": "sidecar_authored_by_runner",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/sidecar_authored_by_runner.slices.yaml",
+      "sha256": "f1fbc40bf93563bfa946ddfb6c61e712b933c65aa29de4faf7eaa164d3ee0418",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A task that merely repeats the title is not a specification.",
+      "expected": {
+        "codes": [
+          "task_is_title_only"
+        ],
+        "result": "fail"
+      },
+      "id": "task_is_title_only",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/task_is_title_only.slices.yaml",
+      "sha256": "657b65fedc029212595762ae1da8df64f9040f0e6840f14c63a16bc77bbe4d50",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Contract version 2 is not supported by this template.",
+      "expected": {
+        "codes": [
+          "unknown_contract_version"
+        ],
+        "result": "fail"
+      },
+      "id": "unknown_version",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/unknown_version.slices.yaml",
+      "sha256": "ded3b96ead6e131fa78c7a742e1dc681d0acc92c7a6b13a2740581742dd40636",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "An absolute path is never a repository path.",
+      "expected": {
+        "codes": [
+          "write_path_absolute"
+        ],
+        "result": "fail"
+      },
+      "id": "write_path_absolute",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/write_path_absolute.slices.yaml",
+      "sha256": "2d33bb4cce3afbea4e24c04d4cc6db13e5991a6ee32517afe9ec159117410e95",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A directory path grants no write authority.",
+      "expected": {
+        "codes": [
+          "write_path_directory"
+        ],
+        "result": "fail"
+      },
+      "id": "write_path_directory",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/write_path_directory.slices.yaml",
+      "sha256": "245ff180c80db0d30448fe90948ab7820d17f74b304c57a3a69f5344da7f8f91",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A parent-traversal path escapes the repository.",
+      "expected": {
+        "codes": [
+          "write_path_escape"
+        ],
+        "result": "fail"
+      },
+      "id": "write_path_escape",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/write_path_escape.slices.yaml",
+      "sha256": "9d38aaf96672d1dbaf0c8c4bfbe7806b22ed19f6efa2ea866252a287c4f3392a",
+      "tags": [
+        "adversarial"
+      ]
+    },
+    {
+      "args": {},
+      "description": "A glob grants no write authority.",
+      "expected": {
+        "codes": [
+          "write_path_glob"
+        ],
+        "result": "fail"
+      },
+      "id": "write_path_glob",
+      "mode": "sidecar",
+      "path": "tests/fixtures/slice_contract/write_path_glob.slices.yaml",
+      "sha256": "ec0ba41ec77876c44a9d13dc281c7c1eb4255c7047f3775e8f8b7b1ff472c6b1",
+      "tags": [
+        "adversarial"
+      ]
+    }
+  ],
+  "layout": "frutlups.layout.yaml",
+  "manifest_schema": "slice_contract_fixture_manifest",
+  "manifest_version": "1",
+  "modes": {
+    "align": "--sidecar <a> --sidecar <b>",
+    "document": "not run through the checker",
+    "external": "evaluated by downstream consumers",
+    "render": "--sidecar <sidecar> --slice <id> [--attempt N] --rendered <path>",
+    "review": "--review-report <path>",
+    "sidecar": "--sidecar <path>"
+  }
+}

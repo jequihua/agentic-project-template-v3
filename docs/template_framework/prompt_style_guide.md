@@ -9,7 +9,11 @@ Prompts should make the next action safer without becoming a mini manual.
 - State active workspaces.
 - State non-goals.
 - State verification.
-- State output paths.
+- State output paths as an exact write manifest: every artifact the slice
+  writes with its exact repository-relative file path, artifact type, role
+  owner, and retry policy; a task noun such as "publish the decision" with
+  no declared path is not a prompt
+  (`docs/template_framework/slice_prompt_contract.md`).
 - State definition of done.
 - Use `rg` / `rg --files` for search instructions.
 - Keep llloom and frutlups optional unless `PROJECT_STATE.md` enables them.
@@ -20,6 +24,20 @@ Prompts should make the next action safer without becoming a mini manual.
 - When the slice cites repository paths or test identifiers, require the
   read-only `scripts/artifact_integrity_preflight.py` check before semantic
   review.
+
+## Placeholders And Dispatch
+
+- A prompt is dispatchable only at workflow `status: ready`. A ready prompt
+  contains no unresolved sentinel (`TBD`, `<value>`, `<path>`, `<one move>`)
+  and no deleted-section residue; optional sections are removed, never shipped
+  as placeholders. `python scripts/artifact_integrity_preflight.py` errors on
+  both.
+- Pre-created prompts for later roadmap slices stay `status: frozen`: valid
+  planning material, never current work, never promoted silently. Under the
+  slice prompt contract, `ready` requires satisfied opening gates and a
+  recorded dispatch authority.
+- The coder never writes the review report, verdict record, acceptance
+  state, or routing state; a prompt that assigns them to the coder is invalid.
 
 ## Claims And Amendments
 

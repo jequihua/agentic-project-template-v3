@@ -83,8 +83,8 @@ automatically. See `docs/template_framework/project_profiles.md`.
 ### Autonomous-Loop Seat Posture
 
 When an autonomous driver operates this project, every dispatched seat
-(coder, reviewer, architect) reads this file first. Two rules prevent
-false environmental verdicts and host damage:
+(coder, reviewer, architect) reads this file first. Three rules prevent
+false environmental verdicts, host damage, and runaway enumeration:
 
 - Interpreter posture: Python commands, including the project
   verification command, use the canonical interpreter named by the
@@ -96,6 +96,12 @@ false environmental verdicts and host damage:
   restart, or reconfigure host processes, services, or system or global
   state. A seat that believes such an action is required reports it and
   stops instead of performing it.
+- Bounded probes: use exact-path reads and `rg` on named files; never
+  recursively enumerate local state, dependency caches, run stores, or
+  virtual environments; write no snapshot or temp file outside the
+  repository's declared local-state root; never persist a secret value or a
+  resolved machine-local path. The governing runner's before/after fence is
+  the workspace evidence; a seat does not build its own.
 
 ## Minimal Implementation Discipline
 

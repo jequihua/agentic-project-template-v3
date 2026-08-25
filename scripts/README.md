@@ -31,6 +31,31 @@ Optional local-state hygiene support (stdlib-only).
 See `docs/template_framework/security_and_local_state.md` for the policy and the
 Windows deletion note.
 
+## slice_contract_check.py
+
+The reference checker for the slice prompt contract v1
+(`docs/template_framework/slice_prompt_contract.md`). Read-only, exact-path
+driven, deterministic, network-free; stable reason codes in stable order;
+`--json` output. It validates a sidecar, proves two projections align, proves a
+rendered prompt carries every retained field of a slice entry at a resolved
+attempt, and checks a review report's closure record. It reads the closed
+vocabularies from the `slice_prompt_contract` block of `frutlups.layout.yaml`
+and needs the declared PyYAML dependency (imported lazily; `--help` works
+without it). It is never dispatch authority; downstream tools keep their own
+parsers and must pass the same fixtures (`tests/fixtures/slice_contract/`).
+
+```text
+python scripts/slice_contract_check.py --sidecar <roadmap-stem>.slices.yaml
+python scripts/slice_contract_check.py --sidecar <a> --sidecar <b>
+python scripts/slice_contract_check.py --sidecar <s> --slice M001-S02 --attempt 2 --rendered <prompt.md>
+python scripts/slice_contract_check.py --review-report <review_report.md>
+```
+
+`local_state_audit.py --limit-bytes N --exclusions <manifest.json>` is the
+read-only pre-launch size check: it lists every undeclared file at or above
+`N` bytes outside the governed local surfaces and exits 1 while any exists,
+reading the same JSON exclusion manifest the runner reads.
+
 ## artifact_integrity_preflight.py
 
 A read-only preflight for the exact Markdown artifacts named on the command line.

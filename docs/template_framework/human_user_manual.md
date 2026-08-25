@@ -432,7 +432,9 @@ For `llloom`, the actual memory root may be local-only and must be recorded in
 
 ## 7. Framework Docs
 
-Framework docs live in `docs/template_framework/`.
+Framework docs live in `docs/template_framework/`. In a project they are a
+snapshot of the template commit recorded in `Template version`; see
+`migration_and_adoption.md` for refreshing them to a newer pin.
 
 Important files:
 
@@ -929,6 +931,9 @@ Initializing a project for fully autonomous work (proven by the first
 published runner's live campaigns; runner commands live in the runner's own
 operator manual, not here):
 
+- initialize from the current template pin and record it in
+  `Template version` (`v3 @ <commit>`), so a later session can tell which
+  template the checked-in docs are a snapshot of;
 - declare `Frutlups mode: automated driver`, and — for a project where no
   human keeps ledgers — declare the no-ledger index mode in the runner's
   committed policy: the reviews INDEX then legitimately stays at its shipped

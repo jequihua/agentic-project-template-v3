@@ -8,7 +8,8 @@ reinterpret history without explicit human approval and a recorded decision.
 ## New Project
 
 1. Copy the scaffold (or use it as a GitHub template).
-2. Fill `PROJECT_STATE.md` honestly: status, profile, active workspaces, modes
+2. Fill `PROJECT_STATE.md` honestly: status, the template pin in
+   `Template version` (`v3 @ <commit>`), profile, active workspaces, modes
    (default `Memory mode: none`, `Frutlups mode: manual`), objective, next action,
    validation command.
 3. Choose the base profile and activate only the optional workspaces you need
@@ -45,6 +46,54 @@ Do the additive steps before any cleanup:
   never by editing the original record.
 - Physically pruning optional workspaces is an explicit human/project decision,
   recorded in `migration_decision_log.md` — never the default.
+
+## Refreshing A Project To A Newer Template Pin
+
+A project carries a snapshot of the template's framework surfaces, frozen at
+the commit recorded in `Template version`. When the template moves, that
+snapshot ages: a fresh agent reads the project's copy and may find it
+contradicting the tools actually installed. Refresh deliberately, as one
+documented commit.
+
+Three kinds of surface:
+
+- **Template-owned, overwritten from the new pin:** the framework docs under
+  `docs/template_framework/`, the initialization prompts, the prompt
+  templates under `prompts/templates/`, the `scripts/` lane,
+  `frutlups.layout.yaml`, `05_governance/current/review_protocol.md`,
+  `05_governance/current/question_policy.md`, and the scaffold test modules
+  the template ships, matched by name: `test_template_scaffold.py`,
+  `test_closure_convergence.py`, `test_memory_lane_contract.py`,
+  `test_feedback_safeguards.py`, `test_architect_operating_card.py`,
+  `test_external_repository_roles.py`, `test_okf_authoring_migration.py`,
+  `test_okf_navigation_view.py`, `test_okf_profile_checker.py`,
+  `test_okf_profile_fixtures.py`, and the fixture folders they read under
+  `tests/fixtures/`. Any other file under the
+  tests folder is the project's own and is never touched.
+- **Project-owned, never overwritten:** `PROJECT_STATE.md`, `MILESTONES.md`,
+  the content of the numbered workspaces, the coding and review prompt
+  folders, `05_governance/reviews/`, `05_governance/human_owner_notes/`,
+  `questions/`, the decision and risk logs, and every project-authored test.
+- **Merged by hand:** `CLAUDE.md` and `README.md`. Intake customizes them, so
+  carry template rule changes across manually.
+
+Steps:
+
+1. Confirm the project's template-owned surfaces still match the recorded pin
+   (diff against that template commit). Local edits there are drift; resolve
+   them first, never overwrite them silently.
+2. Copy the new pin's versions of the template-owned surfaces; merge the
+   merge-by-hand surfaces.
+3. Set `Template version` to the new pin.
+4. Run the project's validation command; the clone-only checks report as
+   skipped, not failed, in an initialized project.
+5. Commit as one documented refresh and record it in
+   `05_governance/decision_log.md`.
+
+When not refreshing: record the disagreement in
+`05_governance/current/known_divergences.md` and continue on the
+source-of-truth order in `CLAUDE.md`. The checked-in snapshot is evidence of
+what the template said at the pin, not authority over the tools installed now.
 
 ## Front Matter (OKF Profile)
 

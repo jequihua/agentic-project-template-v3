@@ -40,6 +40,19 @@ fixed value, so a project may legitimately enable a lane):
 - `Frutlups mode`: `manual` (default/off) / `semi-manual` / `automated driver` —
   defined in `docs/template_framework/frutlups_modes.md`.
 
+## Template Version Carries The Pin
+
+`Template version` records both the template generation and the exact template
+commit the project was projected from, in the form `v3 @ <commit>` (full or
+short SHA; a release tag is acceptable when the template publishes one).
+Framework initialization writes it; only a template refresh (see
+`docs/template_framework/migration_and_adoption.md`, "Refreshing A Project To A
+Newer Template Pin") changes it. The shipped scaffold carries the bare `v3`
+because a template cannot know its own future commit; the pin is written at
+projection time. No tool parses this value. It exists so a human or agent can
+tell which template commit the checked-in framework docs are a snapshot of, and
+so a refresh has an exact baseline to diff against.
+
 ## Which Fields Are Current Truth
 
 These fields are live truth and override stale mentions elsewhere:

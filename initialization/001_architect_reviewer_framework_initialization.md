@@ -73,6 +73,11 @@ Default loop:
 
 ## First Action
 
+Record the template pin this project was projected from in `Template version`
+as `v3 @ <commit>` (`git -C <template checkout> rev-parse HEAD`, or the release
+tag). The checked-in framework docs are a snapshot of that commit; the pin is
+what a later refresh diffs against (`docs/template_framework/project_state_contract.md`).
+
 Inspect the project profile and update `PROJECT_STATE.md` so a coder can answer:
 
 - What is active?

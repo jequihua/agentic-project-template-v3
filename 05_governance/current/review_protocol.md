@@ -148,7 +148,8 @@ Use findings-first review:
 2. Scope discipline.
 3. Verification performed.
 4. Documentation and governance honesty.
-5. Closure decision.
+5. Closure decision, as a `## Closure Decision` section (the closure record
+   below).
 6. Recommended next move: pick exactly one.
 
 Each finding carries its P0-P3 disposition and plane word; blocking findings
@@ -163,6 +164,39 @@ the verdict line; when the slice adopts a failure-model ledger, the receipt
 names its frozen version. Append-only history remains the audit trail; the
 closure receipt is the active decision surface, and a live waiver never
 stays off it.
+
+## Closure Record
+
+Every review report carries, immediately before `## Verdict`, exactly one
+`## Closure Decision` section with exactly two lines:
+
+```markdown
+## Closure Decision
+
+Objective status: <achieved|not_achieved|not_applicable|indeterminate>
+Objective evidence: <one line citing the slice closure-proof artifacts, or the exact not-applicable justification>
+```
+
+`achieved`: the cited closure evidence establishes every applicable objective
+success criterion. `not_achieved`: the evidence establishes that at least one
+applicable criterion was not met. `not_applicable`: the review has no
+applicable objective dimension, with an explicit reason. `indeterminate`:
+relevant evidence exists or was sought but is absent, incomplete, conflicting,
+or otherwise insufficient to decide.
+
+Implementation completion and objective achievement are assessed separately.
+A truthful pre-execution or fail-closed stop may earn `pass` with
+`Objective status: not_achieved` or `indeterminate`; those are legal receipts
+that never imply milestone completion, and the one next move says so.
+`pass` with `not_applicable` completes only with an explicit compatible routing
+status from the operating tool; being the last slice is never sufficient. The
+objective status owns no route: routing is the operating tool's dimension. No
+objective line appears inside `## Verdict`.
+
+The reviewer also confirms the coder wrote only paths the coding prompt's write
+manifest assigns to the coder; a coder-written review report, verdict record,
+acceptance state, or routing state is a P1 authority finding
+(`docs/template_framework/slice_prompt_contract.md`).
 
 End every review report with a `## Verdict` section whose ATX heading text is
 exactly `Verdict`. Its first non-empty line must be exactly

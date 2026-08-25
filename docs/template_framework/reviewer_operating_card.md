@@ -25,7 +25,10 @@ live-state source — this card copies none of it.
    (`docs/template_framework/closure_convergence.md`).
 7. Write findings-first output: confirmed issues by severity; scope
    discipline; verification performed; documentation and governance
-   honesty; closure decision; exactly one recommended next move.
+   honesty; closure decision as a `## Closure Decision` section carrying
+   `Objective status:` and `Objective evidence:` (objective achievement is
+   judged separately from the implementation verdict); exactly one
+   recommended next move.
 8. End with a `## Verdict` section whose ATX heading text is exactly
    `Verdict`. Its first non-empty line must be exactly
    `Verdict: <value> - next: <one move>`, where `<value>` is exactly one of

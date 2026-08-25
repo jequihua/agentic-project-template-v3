@@ -116,6 +116,23 @@ durably (decision log or owner note), and the corrective pass proceeds under
 this protocol. Reopening does not rewrite the earlier review and does not by
 itself count as a recurrence of the reviewed invariant.
 
+## Objective Status Is Not A Verdict
+
+A slice has two independent result dimensions. The implementation verdict
+(`pass` / `needs_work` / `blocked` / `override`) judges the delivered change
+against its acceptance envelope. The objective status (`achieved` /
+`not_achieved` / `not_applicable` / `indeterminate`, recorded in the review
+report's `## Closure Decision` section per
+`05_governance/current/review_protocol.md`) judges whether the slice's
+declared objective success criteria were met by the cited closure proof.
+The coding prompt supplies both inputs (Definition Of Done for the first,
+Objective And Closure Proof for the second); the reviewer assesses them
+separately. `pass` with `not_achieved` or `indeterminate` is an honest,
+legal receipt — a truthful pre-execution stop is one — and never implies
+milestone completion; a third dimension, routing, belongs to the operating
+tool and is never inferred from a verdict plus slice position. The verdict
+vocabulary is unchanged.
+
 ## Active Evidence Window
 
 Retention and active review input are different things. Git and governance

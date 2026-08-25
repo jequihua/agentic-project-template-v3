@@ -59,6 +59,11 @@ Convergence (canonical: `docs/template_framework/closure_convergence.md`):
   consumed surfaces, and drift is dispositioned by role
   (`docs/template_framework/external_repository_roles.md`) — global quiet is
   never a gate;
+- write authority: the coder changed only paths the coding prompt's write
+  manifest assigns to the coder, at their exact resolved paths; a
+  coder-written review report, verdict record, acceptance state, or routing
+  state is a P1 authority finding
+  (`docs/template_framework/slice_prompt_contract.md`);
 - inherited findings only: reconcile the coder's claims against the
   controlling delta table before substantive gates — entering disposition,
   evidence, reviewer disposition, authority actor
@@ -133,6 +138,14 @@ creates the milestone commit by default; otherwise leave it commit-ready for
 a human or authorized workflow. At a completed roadmap or work-package
 boundary you may instead note pull-request-ready; opening a PR remains a
 human decision.
+
+Immediately before the verdict section, write exactly one `## Closure Decision`
+section with exactly two lines — `Objective status: <value>` (one of
+`achieved`, `not_achieved`, `not_applicable`, `indeterminate`) and
+`Objective evidence: <one line citing the closure-proof artifacts, or the
+not-applicable reason>`. Assess implementation completion and objective
+achievement separately; a truthful stop may pass with `not_achieved`, which
+never implies milestone completion (`05_governance/current/review_protocol.md`).
 
 Follow the released verdict contract exactly:
 

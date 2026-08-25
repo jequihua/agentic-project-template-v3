@@ -66,6 +66,11 @@ decision; until then, these hold):
   is transcribed to a numbered, dated note under
   `05_governance/human_owner_notes/` before work relies on it.
 
+A `pass` verdict closes the implementation transition; whether the slice's
+objective was achieved is the review's separate closure record, and a
+milestone completes only on explicit accepted completion evidence, never on a
+pass at the last slice (`docs/template_framework/closure_convergence.md`).
+
 ### Closure Routing Ownership And Cadence
 
 Step 6 updates only the surfaces whose cadence has been reached; do not mirror

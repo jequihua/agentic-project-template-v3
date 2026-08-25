@@ -33,6 +33,11 @@ drift is reported, not upgraded into a stop.
 
 Definition Of Done Audit:
 
+When the coding prompt carries an Objective And Closure Proof section, state
+which closure-proof items this slice produced and which it did not, with the
+artifact paths. This is a claim; the objective status itself is recorded by
+the reviewer, never here.
+
 When this slice works from review findings, reproduce the controlling
 disposition table here and distinguish findings this slice remediated,
 findings it only challenged, findings already withdrawn by reviewer

@@ -297,9 +297,11 @@ a line-based rule states exactly:
   `rendered_manifest_row_missing`, an extra or duplicate row
   `rendered_manifest_row_undeclared` — the table is write authority read by
   the coder, so it is exact by cardinality, not by presence;
-- the Self-Report section carries the manifest's self-report path as its
-  only backticked path line (`rendered_self_report_path_missing`,
-  `rendered_self_report_path_undeclared`);
+- the Self-Report section carries the manifest's self-report path exactly
+  once, as its only backticked path line — a multiset equal to the
+  singleton (`rendered_self_report_path_missing` when absent,
+  `rendered_self_report_path_undeclared` for a different path or a second
+  occurrence);
 - every line-start `status:` line in the prompt equals `status: <value>`
   with the entry's value, and at least two exist (the workflow metadata and
   the typed entry): `rendered_status_disagreement`;

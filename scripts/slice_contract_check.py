@@ -865,11 +865,13 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
                     break
         if w.get("artifact_type") == "self_report" and w.get("role_owner") == "coder":
             wanted_line = f"`{resolved}`"
-            if wanted_line not in backticked:
+            remaining_lines = list(backticked)  # singleton cardinality: the declared line exactly once, nothing else
+            if wanted_line in remaining_lines:
+                remaining_lines.remove(wanted_line)
+            else:
                 err("rendered_self_report_path_missing", f"Self-Report section does not carry the line `{resolved}`")
-            for line in backticked:
-                if line != wanted_line:
-                    err("rendered_self_report_path_undeclared", f"Self-Report carries a path line the entry does not declare: {line[:100]!r}")
+            for line in remaining_lines:
+                err("rendered_self_report_path_undeclared", f"Self-Report carries a path line beyond the one declared: {line[:100]!r}")
     env = entry.get("execution_envelope")
     if isinstance(env, dict) and isinstance(env.get("local_output_root"), str) and attempt:
         for other in range(1, 1000):

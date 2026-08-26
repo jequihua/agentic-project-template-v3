@@ -448,6 +448,8 @@ class SliceContractCheckerTests(unittest.TestCase):
             "removed row": (rendered.replace(declared, "", 1), {"rendered_manifest_row_missing"}, {"rendered_manifest_row_undeclared"}),
             "replaced cell": (rendered.replace(declared, declared.replace("create_once", "modify"), 1), {"rendered_manifest_row_missing", "rendered_manifest_row_undeclared"}, set()),
             "second self-report line": (rendered.replace(self_report, self_report + "\n`05_governance/reviews/m001/other.md`\n", 1), {"rendered_self_report_path_undeclared"}, {"rendered_self_report_path_missing"}),
+            "duplicated self-report line (R5-F1)": (rendered.replace(self_report, self_report + "\n" + self_report, 1), {"rendered_self_report_path_undeclared"}, {"rendered_self_report_path_missing"}),
+            "self-report line removed": (rendered.replace(self_report, "", 1), {"rendered_self_report_path_missing"}, {"rendered_self_report_path_undeclared"}),
         }
         for label, (text, expected, absent) in probes.items():
             with self.subTest(probe=label):

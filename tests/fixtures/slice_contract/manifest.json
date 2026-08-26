@@ -1557,6 +1557,27 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
+      "description": "Round-5 probe R5-F1: the exact declared Self-Report line repeated; cardinality is a singleton, so the second occurrence is undeclared.",
+      "expected": {
+        "codes": [
+          "rendered_self_report_path_undeclared"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_self_report_path_duplicate",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_self_report_path_duplicate.md",
+      "sha256": "374aa1980bf266e1f4299ee13667b7d028c19767845cf58e72078aa1fddd6d70",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
       "description": "The Self-Report section names a different path than the manifest's self-report row: the declared line is missing and the other is undeclared.",
       "expected": {
         "codes": [
@@ -2735,7 +2756,7 @@
   ],
   "layout": "frutlups.layout.yaml",
   "manifest_schema": "slice_contract_fixture_manifest",
-  "manifest_version": "4",
+  "manifest_version": "5",
   "modes": {
     "align": "--sidecar <a> --sidecar <b>",
     "document": "not run through the checker",

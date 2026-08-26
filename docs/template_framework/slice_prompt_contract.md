@@ -187,11 +187,16 @@ copies the entry's `status`, `authored_by`, and `dispatch_authority` into the
 prompt's workflow metadata; a prompt is dispatchable only at workflow
 `status: ready`, and a ready prompt contains no unresolved sentinel and no
 deleted-section residue (`scripts/artifact_integrity_preflight.py` errors on
-both). Every `status: <word>` line in a prompt (the workflow metadata and
-the typed entry of section 8 both carry one) holds the same value; the
-preflight reads them by a total line rule with no fence parsing, and a
-disagreement is `status_ambiguous`: the prompt is treated as ready and fails
-closed. `artifact_exists` alone never gates a consumption of bytes that
+both). Dispatch status is read line-based: every line-start `status:` line
+in a prompt is exactly `status: <value>` with the entry's value, plain and
+unquoted, and a contract prompt carries at least two (the workflow metadata
+and the typed entry of section 8); the checker refuses any other spelling
+(`typed_entry_status_line`, `rendered_status_disagreement`). The preflight
+reads the same lines by a total line rule with no fence or YAML parsing: it
+normalizes only matching surrounding quotes, and a disagreement, any other
+spelling (tag, flow mapping, block scalar), or a contract prompt with fewer
+than two status lines is `status_ambiguous` — the prompt is treated as
+ready and fails closed. `artifact_exists` alone never gates a consumption of bytes that
 matter; use `artifact_identity` (reference + `sha256`) or
 `pinned_external_release` (`repository`, `tag`, `commit`).
 
@@ -268,7 +273,10 @@ mapping with the attempt-resolved entry; a missing, altered, or undeclared
 leaf is `typed_entry_mismatch`, an absent block `typed_entry_missing`, a
 second block in the section `typed_entry_ambiguous`, an unloadable block
 `typed_entry_unparseable`. Any YAML serialization that loads to the same
-mapping conforms (key order and quoting are free). The suite deletes and
+mapping conforms (key order and quoting are free) with one normative
+exception: the top-level `status` key is the plain line-start line
+`status: <value>` (`typed_entry_status_line`), because dispatch status is
+read by line-based tools (section 5). The suite deletes and
 alters every leaf of every canonical rendering's block, appends an undeclared
 key, and duplicates the block, and proves refusal each time; it also proves
 that pipe- and newline-bearing scalars round-trip.
@@ -277,24 +285,36 @@ The prose sections are the human rendering of the same entry. The checker
 never extracts a field value from prose; the prose is checked only for what
 a line-based rule states exactly:
 
-- section presence, order, and uniqueness per the layout
-  (`rendered_sections_required`, `rendered_sections_conditional`), headings
-  counted at line start; a not-applicable group has no section and no
-  `*Conditional:*` residue;
+- section presence, uniqueness, and applicability per the layout
+  (`rendered_sections_required`, `rendered_sections_conditional`) and, once
+  those hold, section order per the layout's `rendered_section_order`
+  (`rendered_section_order`), headings counted at line start; a
+  not-applicable group has no section and no `*Conditional:*` residue;
 - no slot token, sentinel, or unresolved `{attempt}` token survives;
-- the Write Manifest table carries one exact row
-  `| path | artifact_type | role_owner | retry_policy |` per manifest entry
-  (resolved path), in any order;
-- the Self-Report section carries the manifest's self-report path as a
-  backticked line;
+- the Write Manifest table carries exactly the declared rows
+  `| path | artifact_type | role_owner | retry_policy |` (resolved paths),
+  one per manifest entry, in any order, and nothing else: a missing row is
+  `rendered_manifest_row_missing`, an extra or duplicate row
+  `rendered_manifest_row_undeclared` — the table is write authority read by
+  the coder, so it is exact by cardinality, not by presence;
+- the Self-Report section carries the manifest's self-report path as its
+  only backticked path line (`rendered_self_report_path_missing`,
+  `rendered_self_report_path_undeclared`);
+- every line-start `status:` line in the prompt equals `status: <value>`
+  with the entry's value, and at least two exist (the workflow metadata and
+  the typed entry): `rendered_status_disagreement`;
 - an attempt-bearing entry's resolved paths do not appear with another
   attempt number (history reuse);
 - `--attempt`, when given, equals the entry's own attempt.
 
-A prose value that disagrees with an exact typed entry is a renderer-quality
-defect, not a contract violation: such fixtures are tagged
-`prose-not-authority` and render `pass`. A consumer that needs a field reads
-the typed entry; no machine consumer takes the prose as authority.
+Two prose surfaces remain authority-bearing rails because the coding agent
+reads them directly: the workflow status line and the Write Manifest table
+with its Self-Report path. They are checked exactly, as above. Elsewhere —
+task, lists, candidate identity, envelope narrative — a prose value that
+disagrees with an exact typed entry is a renderer-quality defect, not a
+contract violation: such fixtures are tagged `prose-not-authority` and
+render `pass`. A consumer that needs a field reads the typed entry; no
+machine consumer takes the descriptive prose as authority.
 
 | Typed field | Human rendering (not authority) |
 | --- | --- |
@@ -312,8 +332,10 @@ the typed entry; no machine consumer takes the prose as authority.
 | the whole entry, attempt-resolved | Typed Entry (the carrier; equality is the proof) |
 
 Section order and the required/conditional split are declared in the layout
-(`rendered_sections_required`, `rendered_sections_conditional`; `Typed Entry`
-is required and last). The canonical renderings are
+(`rendered_section_order` — equal to the scaffold's heading sequence, proven
+by test — with `rendered_sections_required` and
+`rendered_sections_conditional`; `Typed Entry` is required and last). The
+canonical renderings are
 `all_fields_rendered_m001_s01.md` (routine), `frozen_entry_rendered_m001_s01.md`
 (frozen: no dispatch-authority line), `all_fields_rendered_m002_s02_attempt_002.md`
 (live corrective, from `all_fields.slices.yaml`) and
@@ -398,12 +420,15 @@ tuple equals this list, proven by test):
 `rendered_section_residue`, `rendered_token_unresolved`,
 `rendered_manifest_row_missing`, `rendered_self_report_path_missing`,
 `rendered_attempt_path_reuse`, `typed_entry_missing`, `typed_entry_ambiguous`,
-`typed_entry_unparseable`, `typed_entry_mismatch`, `closure_section_missing`,
-`closure_section_duplicate`, `closure_after_verdict`, `closure_not_adjacent`,
-`closure_line_count`, `objective_status_line_missing`,
-`objective_status_invalid`, `objective_evidence_line_missing`,
-`verdict_section_missing`, `verdict_section_duplicate`,
-`verdict_footer_invalid`, `objective_status_in_verdict`.
+`typed_entry_unparseable`, `typed_entry_mismatch`, `typed_entry_status_line`,
+`rendered_status_disagreement`, `rendered_manifest_row_undeclared`,
+`rendered_self_report_path_undeclared`, `rendered_section_order`,
+`closure_section_missing`, `closure_section_duplicate`,
+`closure_after_verdict`, `closure_not_adjacent`, `closure_line_count`,
+`objective_status_line_missing`, `objective_status_invalid`,
+`objective_evidence_line_missing`, `verdict_section_missing`,
+`verdict_section_duplicate`, `verdict_footer_invalid`,
+`objective_status_in_verdict`.
 
 Environment codes (I/O and usage; unit-tested, not fixture-driven; the
 checker's `ENVIRONMENT_CODES`): `layout_unreadable`, `layout_contract_block_missing`,

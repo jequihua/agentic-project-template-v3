@@ -215,6 +215,7 @@ class SliceContractScaffoldTests(unittest.TestCase):
         self.assertEqual(text.count("sidecar_suffix"), 1, "one suffix authority only")
         self.assertNotIn("oracle_content_bound_bytes", text)
         self.assertIn('    - "Typed Entry"\n', text)
+        self.assertIn("  rendered_section_order:\n", text)
 
     def test_v1_scaffold_section_order_and_slots(self) -> None:
         text = V1_SCAFFOLD.read_text(encoding="utf-8")
@@ -385,6 +386,89 @@ class SliceContractCheckerTests(unittest.TestCase):
                 self.assertIn("typed_entry_mismatch", codes)
         self.assertGreaterEqual(count, 4, "the manifest enumerates at least four canonical renderings")
 
+    def test_layout_section_order_equals_the_scaffold_and_covers_every_section(self) -> None:
+        order = list(self.layout["rendered_section_order"])
+        self.assertEqual(order, _headings(V1_SCAFFOLD.read_text(encoding="utf-8")))
+        self.assertEqual(set(order), set(self.layout["rendered_sections_required"]) | set(self.layout["rendered_sections_conditional"]))
+        self.assertEqual(len(order), len(set(order)))
+        self.assertEqual(order[-1], "Typed Entry")
+
+    def _preflight_codes(self, text: str) -> set[str]:
+        preflight = _scripts_module("artifact_integrity_preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "tests").mkdir()
+            (root / "prompt.md").write_text(text, encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                preflight.main(["--root", str(root), "prompt.md"])
+        return set(re.findall(r"^ERROR (\S+)", out.getvalue(), re.MULTILINE))
+
+    def test_status_spellings_cannot_conceal_disagreement_in_either_direction(self) -> None:
+        """Round-4 R4-F1: every YAML spelling of the carrier's status that still
+        loads equal must refuse when the workflow metadata disagrees, in the
+        checker (specific codes, no typed_entry_mismatch) and in the preflight."""
+        frozen_doc = self.yaml.safe_load((FIX_ROOT / "frozen_entry_valid.slices.yaml").read_text(encoding="utf-8"))
+        frozen = (FIX_ROOT / "frozen_entry_rendered_m001_s01.md").read_text(encoding="utf-8")
+        routine = (FIX_ROOT / "all_fields_rendered_m001_s01.md").read_text(encoding="utf-8")
+        cases = (("frozen->ready", frozen_doc, frozen, "frozen", "ready"), ("ready->frozen", self.positive, routine, "ready", "frozen"))
+        for label, doc, rendered, real, fake in cases:
+            head, block, tail = _typed_block(rendered)
+            self.assertEqual(self.check.check_rendered(doc, "M001-S01", None, rendered, label, self.layout), [])
+            metadata_swapped = head.replace(f"status: {real}\n", f"status: {fake}\n", 1)
+            typed = self.yaml.safe_load(block)
+            spellings = {
+                "single-quoted": block.replace(f"status: {real}\n", f"status: '{real}'\n"),
+                "double-quoted": block.replace(f"status: {real}\n", f'status: "{real}"\n'),
+                "tagged": block.replace(f"status: {real}\n", f"status: !!str {real}\n"),
+                "block scalar": block.replace(f"status: {real}\n", f"status: |-\n  {real}\n"),
+                "flow mapping": self.yaml.safe_dump(typed, default_flow_style=True, sort_keys=False, allow_unicode=True, width=10 ** 6).rstrip("\n"),
+                "plain (metadata only)": block,
+            }
+            for name, mutated in spellings.items():
+                with self.subTest(direction=label, spelling=name):
+                    self.assertEqual(self.yaml.safe_load(mutated), typed, "the spelling must still load equal: that is the concealment shape")
+                    text = metadata_swapped + mutated + tail
+                    codes = {d.code for d in self.check.check_rendered(doc, "M001-S01", None, text, label, self.layout)}
+                    self.assertIn("rendered_status_disagreement", codes)
+                    self.assertNotIn("typed_entry_mismatch", codes)
+                    if name != "plain (metadata only)":
+                        self.assertIn("typed_entry_status_line", codes)
+                    self.assertIn("status_ambiguous", self._preflight_codes(text))
+            with self.subTest(direction=label, spelling="agreeing, plain"):
+                self.assertNotIn("status_ambiguous", self._preflight_codes(rendered))
+
+    def test_write_manifest_and_self_report_are_exact_by_cardinality(self) -> None:
+        rendered = (FIX_ROOT / "all_fields_rendered_m001_s01.md").read_text(encoding="utf-8")
+        declared = "| 08_pkg/tests/test_route_cost.py | test | coder | create_once |\n"
+        self_report = "`05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md`\n"
+        probes = {
+            "extra row (reviewer's probe)": (rendered.replace(declared, declared + "| 03_experiments/active_roadmap.md | analysis | coder | append_only |\n", 1), {"rendered_manifest_row_undeclared"}, {"rendered_manifest_row_missing"}),
+            "duplicate row": (rendered.replace(declared, declared + declared, 1), {"rendered_manifest_row_undeclared"}, {"rendered_manifest_row_missing"}),
+            "removed row": (rendered.replace(declared, "", 1), {"rendered_manifest_row_missing"}, {"rendered_manifest_row_undeclared"}),
+            "replaced cell": (rendered.replace(declared, declared.replace("create_once", "modify"), 1), {"rendered_manifest_row_missing", "rendered_manifest_row_undeclared"}, set()),
+            "second self-report line": (rendered.replace(self_report, self_report + "\n`05_governance/reviews/m001/other.md`\n", 1), {"rendered_self_report_path_undeclared"}, {"rendered_self_report_path_missing"}),
+        }
+        for label, (text, expected, absent) in probes.items():
+            with self.subTest(probe=label):
+                codes = {d.code for d in self.check.check_rendered(self.positive, "M001-S01", None, text, label, self.layout)}
+                self.assertTrue(expected <= codes, f"{expected} not in {codes}")
+                self.assertFalse(absent & codes, f"{absent & codes} emitted unexpectedly")
+
+    def test_section_order_is_enforced_for_every_canonical_rendering(self) -> None:
+        count = 0
+        for fid, doc, slice_id, rendered in self._canonical_renderings():
+            count += 1
+            headings = _headings(rendered)
+            lines = rendered.split("\n")
+            last = lines.index(f"## {headings[-1]}")
+            first = lines.index(f"## {headings[0]}")
+            moved = "\n".join(lines[:first] + lines[last:] + [""] + lines[first:last]).rstrip("\n") + "\n"
+            with self.subTest(fixture=fid, mutation="last section first"):
+                codes = {d.code for d in self.check.check_rendered(doc, slice_id, None, moved, fid, self.layout)}
+                self.assertEqual(codes, {"rendered_section_order"})
+        self.assertGreaterEqual(count, 4)
+
     def test_pipe_and_newline_bearing_scalars_round_trip_through_the_carrier(self) -> None:
         doc = copy.deepcopy(self.positive)
         entry = doc["slices"][1]
@@ -551,6 +635,35 @@ class ReadyPromptPreflightTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("status_ambiguous", out)
         self.assertIn("ready_tbd", out)
+
+    def test_quoted_status_normalizes_but_other_spellings_are_ambiguous(self) -> None:
+        typed = "Implement.\n\n## Typed Entry\n\n```yaml\nslice: M001-S01\n{line}\n```"
+        code, out = self._run(self._prompt("ready", typed.format(line="status: 'ready'")))
+        self.assertEqual(code, 0, out)
+        for line in ("status: 'frozen'", 'status: "frozen"', "status: !!str ready", "status: |-", "status: {ready}", "status:"):
+            with self.subTest(line=line):
+                code, out = self._run(self._prompt("ready", typed.format(line=line)))
+                self.assertEqual(code, 1)
+                self.assertIn("status_ambiguous", out)
+
+    def test_contract_prompt_with_one_status_line_is_ambiguous(self) -> None:
+        """A `## Typed Entry` prompt whose carrier contributes no line-start status
+        line (flow mapping, nested spelling) is ambiguous, whatever the metadata says."""
+        for body in ("## Typed Entry\n\n```yaml\n{slice: M001-S01, status: frozen}\n```", "## Typed Entry\n\n```yaml\nentry:\n  status: frozen\n```"):
+            with self.subTest(body=body[-40:]):
+                code, out = self._run(self._prompt("frozen", "Implement.\n\n" + body))
+                self.assertEqual(code, 1)
+                self.assertIn("status_ambiguous", out)
+        code, out = self._run("# P\n\nstatus: frozen\n\n## Task\n\nTBD\n")
+        self.assertEqual(code, 0, "a non-contract artifact with one plain status line is unchanged: " + out)
+
+    def test_unresolved_status_slot_is_draft_unless_a_value_coexists(self) -> None:
+        scaffold_like = "# P\n\n```yaml\nstatus: TBD:status\n```\n\n## Task\n\nTBD:task\n\n## Typed Entry\n\n```yaml\nTBD:typed_entry\n```\n"
+        code, out = self._run(scaffold_like)
+        self.assertEqual(code, 0, out)
+        code, out = self._run(self._prompt("ready", "Implement.\n\nstatus: TBD:status"))
+        self.assertEqual(code, 1)
+        self.assertIn("status_ambiguous", out)
 
     def test_clean_ready_prompt_passes(self) -> None:
         code, out = self._run(self._prompt("ready", "Implement the ledger writer."))

@@ -17,6 +17,72 @@ status: ready
 dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
 ```
 
+## Typed Entry
+
+The machine carrier of this prompt: the sidecar entry for this slice with
+every attempt token resolved, verbatim. A conforming renderer emits it from
+its typed model; conformance is equality between this block and the sidecar
+entry (`docs/template_framework/slice_prompt_contract.md`). The prose
+sections above are the human rendering of the same entry; the workflow
+status line, the Write Manifest rows, and the Self-Report path are checked
+exactly against it, and this block's `status` line stays plain.
+
+```yaml
+slice: M001-S01
+title: Add the bounded route-cost ledger
+milestone: M001
+authored_by: architect_reviewer
+status: ready
+dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
+strictness: Level 3
+mode: normal implementation
+live: false
+corrective: false
+task: 'Implement the route-cost ledger writer in the package and cover it with
+
+  table-driven tests. Preserve the existing CLI surface.
+
+  '
+active_workspaces:
+- 08_pkg
+- 05_governance
+read_first:
+- PROJECT_STATE.md
+- 08_pkg/CONTEXT.md
+writes:
+- path: 08_pkg/src/routing/route_cost.py
+  artifact_type: implementation
+  role_owner: coder
+  retry_policy: modify
+- path: 08_pkg/tests/test_route_cost.py
+  artifact_type: test
+  role_owner: coder
+  retry_policy: create_once
+- path: 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md
+  artifact_type: self_report
+  role_owner: coder
+  retry_policy: create_once
+non_goals:
+- No router policy change
+- No live Graphab execution
+verification:
+- python -m unittest discover -s 08_pkg/tests
+- python scripts/artifact_integrity_preflight.py 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md
+opening_gates: none
+external_inputs: none
+candidate_identity: none
+correction: none
+execution_envelope: none
+objective:
+  success_criteria:
+  - The ledger records one row per admitted route with monotonic timestamps
+  closure_proof:
+  - A passing focused test run cited in the self-report
+definition_of_done:
+- Ledger writer implemented and tested
+- Self-report written at the manifest path
+```
+
 ## Current State
 
 Read `PROJECT_STATE.md`.
@@ -80,6 +146,7 @@ Attempt tokens are resolved before rendering; this table never carries one.
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
 | 08_pkg/src/routing/route_cost.py | implementation | coder | modify |
+| 08_pkg/tests/test_route_cost.py | test | coder | create_once |
 | 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md | self_report | coder | create_once |
 
 No other file is writable. Review reports and verdict records are
@@ -154,69 +221,3 @@ Do not create a commit unless this prompt explicitly instructs it (see
 
 - Ledger writer implemented and tested
 - Self-report written at the manifest path
-
-## Typed Entry
-
-The machine carrier of this prompt: the sidecar entry for this slice with
-every attempt token resolved, verbatim. A conforming renderer emits it from
-its typed model; conformance is equality between this block and the sidecar
-entry (`docs/template_framework/slice_prompt_contract.md`). The prose
-sections above are the human rendering of the same entry; the workflow
-status line, the Write Manifest rows, and the Self-Report path are checked
-exactly against it, and this block's `status` line stays plain.
-
-```yaml
-slice: M001-S01
-title: Add the bounded route-cost ledger
-milestone: M001
-authored_by: architect_reviewer
-status: ready
-dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
-strictness: Level 3
-mode: normal implementation
-live: false
-corrective: false
-task: 'Implement the route-cost ledger writer in the package and cover it with
-
-  table-driven tests. Preserve the existing CLI surface.
-
-  '
-active_workspaces:
-- 08_pkg
-- 05_governance
-read_first:
-- PROJECT_STATE.md
-- 08_pkg/CONTEXT.md
-writes:
-- path: 08_pkg/src/routing/route_cost.py
-  artifact_type: implementation
-  role_owner: coder
-  retry_policy: modify
-- path: 08_pkg/tests/test_route_cost.py
-  artifact_type: test
-  role_owner: coder
-  retry_policy: create_once
-- path: 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md
-  artifact_type: self_report
-  role_owner: coder
-  retry_policy: create_once
-non_goals:
-- No router policy change
-- No live Graphab execution
-verification:
-- python -m unittest discover -s 08_pkg/tests
-- python scripts/artifact_integrity_preflight.py 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md
-opening_gates: none
-external_inputs: none
-candidate_identity: none
-correction: none
-execution_envelope: none
-objective:
-  success_criteria:
-  - The ledger records one row per admitted route with monotonic timestamps
-  closure_proof:
-  - A passing focused test run cited in the self-report
-definition_of_done:
-- Ledger writer implemented and tested
-- Self-report written at the manifest path
-```

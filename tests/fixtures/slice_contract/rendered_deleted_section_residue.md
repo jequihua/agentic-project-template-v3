@@ -166,7 +166,9 @@ The machine carrier of this prompt: the sidecar entry for this slice with
 every attempt token resolved, verbatim. A conforming renderer emits it from
 its typed model; conformance is equality between this block and the sidecar
 entry (`docs/template_framework/slice_prompt_contract.md`). The prose
-sections above are the human rendering of the same entry.
+sections above are the human rendering of the same entry; the workflow
+status line, the Write Manifest rows, and the Self-Report path are checked
+exactly against it, and this block's `status` line stays plain.
 
 ```yaml
 slice: M001-S01

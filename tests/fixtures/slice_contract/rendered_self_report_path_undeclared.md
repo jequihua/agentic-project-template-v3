@@ -80,6 +80,7 @@ Attempt tokens are resolved before rendering; this table never carries one.
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
 | 08_pkg/src/routing/route_cost.py | implementation | coder | modify |
+| 08_pkg/tests/test_route_cost.py | test | coder | create_once |
 | 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md | self_report | coder | create_once |
 
 No other file is writable. Review reports and verdict records are
@@ -138,6 +139,8 @@ restated here. In short:
 Write a self-report at:
 
 `05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md`
+
+`05_governance/reviews/m001/other_self_report.md`
 
 Use the canonical schema in `prompts/templates/self_report.md`. State which
 closure-proof items you produced and which you did not; the objective status

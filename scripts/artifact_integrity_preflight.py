@@ -36,7 +36,9 @@ VOLATILE_RES = (
 # optional section that should have been removed (slice prompt contract v1).
 READY_SENTINELS = ("TBD", "<value>", "<path>", "<one move>")
 READY_RESIDUE_PHRASES = ("delete this section", "conditional: rendered only", "fills or deletes")
-WORKFLOW_STATUS_RE = re.compile(r"^status:\s*([A-Za-z_-]+)\s*$")
+WORKFLOW_STATUS_RE = re.compile(r"^status:(.*)$")
+STATUS_WORD_RE = re.compile(r"^(['\"]?)([A-Za-z_-]+)\1$")
+TYPED_ENTRY_HEADING = "## Typed Entry"
 HISTORICAL_WORDS = (
     "historical",
     "nonexistent",
@@ -251,21 +253,45 @@ def _profile_summary(records: list[dict]) -> dict:
     return {layer: dict(sorted(counts.items())) for layer, counts in layers.items()}
 
 
-def _workflow_status(lines: list[str]) -> tuple[str, bool]:
-    """(status, ambiguous): the workflow status declared by `status: <word>` lines
-    anywhere in the artifact. Every such line must agree; a disagreement is
-    ambiguous and the caller fails closed (ready rules apply). No fence parsing:
-    the rule is total over the file."""
+def _workflow_status(lines: list[str]) -> tuple[str, str]:
+    """(status, problem): the workflow status declared by line-start `status:`
+    lines anywhere in the artifact - a total line rule, no fence or YAML parsing.
+    A value is one bare word, optionally in matching quotes (normalized away);
+    any other spelling is unrecognized. Every line must agree, and a contract-v1
+    prompt (one carrying a line-start `## Typed Entry` heading) declares it at
+    least twice: the workflow metadata and the typed entry. Any violation is a
+    problem and the caller fails closed (the artifact is treated as ready). A
+    value carrying a sentinel (`status: TBD:status` in a scaffold) is an
+    unresolved slot: never a value, so never ready, and never in disagreement
+    unless a real value is also declared."""
     values: list[str] = []
+    slots = 0
+    problems: list[str] = []
     for line in lines:
-        match = WORKFLOW_STATUS_RE.match(line.strip())
-        if match:
-            values.append(match.group(1))
-    if not values:
-        return "", False
+        match = WORKFLOW_STATUS_RE.match(line)
+        if not match:
+            continue
+        remainder = match.group(1).strip()
+        word = STATUS_WORD_RE.match(remainder)
+        if word:
+            values.append(word.group(2))
+        elif any(sentinel in remainder for sentinel in READY_SENTINELS):
+            slots += 1
+        else:
+            problems.append(f"unrecognized status spelling {line[:40]!r}")
     if len(set(values)) > 1:
-        return "ready", True
-    return values[0], False
+        problems.append("status lines disagree: " + ", ".join(sorted(set(values))))
+    if values and slots:
+        problems.append("a status value coexists with an unresolved status slot")
+    if values and any(line.startswith(TYPED_ENTRY_HEADING) for line in lines):
+        total = sum(1 for line in lines if WORKFLOW_STATUS_RE.match(line))
+        if total < 2:
+            problems.append(f"a contract prompt declares its status in the workflow metadata and in the typed entry; found {total}")
+    if problems:
+        return "ready", "; ".join(problems)
+    if not values:
+        return "", ""
+    return values[0], ""
 
 
 def check_artifact(
@@ -289,12 +315,13 @@ def check_artifact(
     fields, frontmatter_error = _frontmatter(text)
     if require_frontmatter and frontmatter_error:
         findings.append(Finding("error", "frontmatter", rel, 1, "", frontmatter_error))
-    workflow_status, ambiguous = _workflow_status(lines)
+    workflow_status, status_problem = _workflow_status(lines)
     status = (fields or {}).get("status", "") or workflow_status
-    if ambiguous:
+    if status_problem:
+        status = "ready"
         findings.append(
             Finding("error", "status_ambiguous", rel, 1, "status:",
-                    "status lines disagree; the artifact is treated as ready and fails closed")
+                    status_problem + "; the artifact is treated as ready and fails closed")
         )
     if status.lower() == "ready":
         for sentinel in READY_SENTINELS:

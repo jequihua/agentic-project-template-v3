@@ -14,7 +14,6 @@ strictness: Level 3
 live: false
 corrective: false
 status: ready
-dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
 ```
 
 ## Current State
@@ -80,6 +79,7 @@ Attempt tokens are resolved before rendering; this table never carries one.
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
 | 08_pkg/src/routing/route_cost.py | implementation | coder | modify |
+| 08_pkg/tests/test_route_cost.py | test | coder | create_once |
 | 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md | self_report | coder | create_once |
 
 No other file is writable. Review reports and verdict records are
@@ -170,8 +170,7 @@ slice: M001-S01
 title: Add the bounded route-cost ledger
 milestone: M001
 authored_by: architect_reviewer
-status: ready
-dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
+status: !!str frozen
 strictness: Level 3
 mode: normal implementation
 live: false

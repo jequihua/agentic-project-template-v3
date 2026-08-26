@@ -80,7 +80,9 @@ Attempt tokens are resolved before rendering; this table never carries one.
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
 | 08_pkg/src/routing/route_cost.py | implementation | coder | modify |
+| 08_pkg/tests/test_route_cost.py | test | coder | create_once |
 | 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md | self_report | coder | create_once |
+| 03_experiments/active_roadmap.md | analysis | coder | append_only |
 
 No other file is writable. Review reports and verdict records are
 reviewer/governed artifacts and are never coder outputs. Directory, glob, or

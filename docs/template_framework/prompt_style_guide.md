@@ -27,10 +27,11 @@ Prompts should make the next action safer without becoming a mini manual.
 
 ## Placeholders And Dispatch
 
-- Every `status: <word>` line in a prompt must carry the same value (the
-  workflow metadata and the contract's typed entry both carry one); a
-  disagreement is ambiguous and the preflight treats the prompt as ready and
-  fails closed.
+- Every line-start `status:` line in a prompt is exactly `status: <value>`,
+  plain and unquoted, with one value (the workflow metadata and the
+  contract's typed entry both carry it); a disagreement, any other spelling,
+  or a contract prompt with a single status line is ambiguous and the
+  preflight treats the prompt as ready and fails closed.
 - A prompt is dispatchable only at workflow `status: ready`. A ready prompt
   contains no unresolved sentinel (`TBD`, `<value>`, `<path>`, `<one move>`)
   and no deleted-section residue; optional sections are removed, never shipped

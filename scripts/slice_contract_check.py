@@ -49,6 +49,8 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 STRICTNESS_RE = re.compile(r"^Level [1-4]$")
 HEADING_RE = re.compile(r"^## (.+?)\s*$")
 TYPED_ENTRY_HEADING = "## Typed Entry"
+MANIFEST_TABLE_FRAME = ("| Exact path | Artifact type | Role owner | Retry policy |", "| --- | --- | --- | --- |")
+BACKTICKED_LINE_RE = re.compile(r"^`[^`]+`$")
 TYPED_ENTRY_OPEN = "```yaml"
 TYPED_ENTRY_CLOSE = "```"
 VERDICT_FOOTER_RE = re.compile(r"^Verdict: (pass|needs_work|blocked|override) - next: \S.*$")
@@ -123,7 +125,9 @@ REASON_CODES = (
     "rendered_token_unresolved", "rendered_manifest_row_missing",
     "rendered_self_report_path_missing", "rendered_attempt_path_reuse",
     "typed_entry_missing", "typed_entry_ambiguous", "typed_entry_unparseable",
-    "typed_entry_mismatch",
+    "typed_entry_mismatch", "typed_entry_status_line", "rendered_status_disagreement",
+    "rendered_manifest_row_undeclared", "rendered_self_report_path_undeclared",
+    "rendered_section_order",
     # review report
     "closure_section_missing", "closure_section_duplicate", "closure_after_verdict",
     "closure_not_adjacent", "closure_line_count", "objective_status_line_missing",
@@ -223,6 +227,7 @@ def load_layout_contract(layout_path: Path) -> tuple[dict | None, list[Diagnosti
         return None, [Diagnostic("layout_contract_block_missing", rel, "", "no slice_prompt_contract block")]
     needed = (
         "version", "rendered_sections_required", "rendered_sections_conditional",
+        "rendered_section_order",
         "entry_status_values", "authored_by_values", "artifact_types", "role_owners",
         "role_type_matrix", "reserved_path_classification", "retry_policies",
         "attempt_token", "gate_kinds", "cleanup_values", "result_handling_values",
@@ -753,6 +758,7 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
     attempt = entry_attempt
     order, bodies = _heading_sections(rendered)
     counts = {h: order.count(h) for h in order}
+    presence_errors_before = len(d)
     for h in layout["rendered_sections_required"]:
         if counts.get(h, 0) == 0:
             err("rendered_section_missing", f"required section missing: {h}")
@@ -774,6 +780,15 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
             err("rendered_section_unexpected", f"section rendered although not applicable: {h}")
         if have > 1:
             err("rendered_section_duplicate", f"section appears more than once: {h}")
+    if len(d) == presence_errors_before:
+        # presence, uniqueness and applicability hold: the sequence of known headings must be the layout's
+        expected_seq = [h for h in layout["rendered_section_order"] if h in layout["rendered_sections_required"] or applicable.get(h, False)]
+        observed = [h for h in order if h in expected_seq]
+        if observed != expected_seq:
+            first = next((i for i, (a, b) in enumerate(zip(observed, expected_seq)) if a != b), min(len(observed), len(expected_seq)))
+            found = observed[first] if first < len(observed) else "end"
+            wanted = expected_seq[first] if first < len(expected_seq) else "end"
+            err("rendered_section_order", f"section order differs from the layout at position {first}: found {found!r}, expected {wanted!r}")
     for s in layout["sentinels"]:
         if s in rendered:
             err("rendered_sentinel_residue", f"unresolved sentinel in rendered prompt: {s}")
@@ -808,19 +823,40 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
                     diff = _first_diff(expected, loaded)
                     if diff:
                         err("typed_entry_mismatch", f"typed entry differs from the resolved sidecar entry at {diff}")
+                    block_status_lines = [line for line in body[opens[0] + 1:closes[0]] if line.startswith("status:")]
+                    if block_status_lines != [f"status: {expected.get('status')}"]:
+                        err("typed_entry_status_line", "the typed entry carries its status as exactly one plain line-start line `status: <value>`; dispatch status is read line-based")
     elif typed_count == 0:
         err("typed_entry_missing", "no Typed Entry section")
+    # dispatch status: every line-start status line equals the entry's value, plainly, and both carriers declare it
+    status_value = expected.get("status")
+    if isinstance(status_value, str):
+        wanted_status = f"status: {status_value}"
+        status_lines = [line for line in rendered.splitlines() if line.startswith("status:")]
+        for line in status_lines:
+            if line != wanted_status:
+                err("rendered_status_disagreement", f"status line {line[:60]!r} does not equal {wanted_status!r}")
+        if len(status_lines) < 2:
+            err("rendered_status_disagreement", f"the workflow metadata and the typed entry must both declare {wanted_status!r} as a line-start line; found {len(status_lines)}")
     # write manifest rows: each row complete on one line; self-report path line; attempt reuse
     manifest_lines = bodies.get("Write Manifest", [])
     self_report_lines = bodies.get("Self-Report", [])
-    for w in entry.get("writes", []) if isinstance(entry.get("writes"), list) else []:
-        if not isinstance(w, dict):
-            continue
+    writes = [w for w in (entry.get("writes") if isinstance(entry.get("writes"), list) else []) if isinstance(w, dict)]
+    found_rows = [line for line in manifest_lines if line.startswith("|") and line not in MANIFEST_TABLE_FRAME]
+    remaining_rows = list(found_rows)
+    for w in writes:
+        resolved = resolve_attempt(str(w.get("path", "")), token, attempt)
+        row = f"| {resolved} | {w.get('artifact_type')} | {w.get('role_owner')} | {w.get('retry_policy')} |"
+        if row in remaining_rows:
+            remaining_rows.remove(row)
+        else:
+            err("rendered_manifest_row_missing", f"write manifest row missing or incomplete for {resolved}")
+    for row in remaining_rows:
+        err("rendered_manifest_row_undeclared", f"write manifest row not declared by the entry: {row[:100]!r}")
+    backticked = [line.strip() for line in self_report_lines if BACKTICKED_LINE_RE.match(line.strip())]
+    for w in writes:
         path_value = str(w.get("path", ""))
         resolved = resolve_attempt(path_value, token, attempt)
-        row = f"| {resolved} | {w.get('artifact_type')} | {w.get('role_owner')} | {w.get('retry_policy')} |"
-        if row not in manifest_lines:
-            err("rendered_manifest_row_missing", f"write manifest row missing or incomplete for {resolved}")
         if token in path_value and attempt:
             for other in range(1, 1000):
                 other_attempt = f"{other:03d}"
@@ -828,8 +864,12 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
                     err("rendered_attempt_path_reuse", f"a write target resolves to attempt {other_attempt}, not {attempt}")
                     break
         if w.get("artifact_type") == "self_report" and w.get("role_owner") == "coder":
-            if f"`{resolved}`" not in [line.strip() for line in self_report_lines]:
+            wanted_line = f"`{resolved}`"
+            if wanted_line not in backticked:
                 err("rendered_self_report_path_missing", f"Self-Report section does not carry the line `{resolved}`")
+            for line in backticked:
+                if line != wanted_line:
+                    err("rendered_self_report_path_undeclared", f"Self-Report carries a path line the entry does not declare: {line[:100]!r}")
     env = entry.get("execution_envelope")
     if isinstance(env, dict) and isinstance(env.get("local_output_root"), str) and attempt:
         for other in range(1, 1000):

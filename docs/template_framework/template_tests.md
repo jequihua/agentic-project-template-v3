@@ -65,6 +65,13 @@ equality; the test suite mutates every leaf of the block (delete, alter,
 duplicate into a second block) and asserts refusal. No test parses Markdown
 prose for field values, and no test or script parses CommonMark fences: the
 closure record and the workflow status are read by total, line-based rules.
+Two prose rails stay authority-bearing and are checked exactly rather than
+by presence: the status line (plain spelling, agreement, declared by both
+carriers) and the Write Manifest rows with the Self-Report path (exact
+cardinality); section order follows the layout's `rendered_section_order`.
+The suite falsifies each: quoted, tagged, block-scalar, and flow status
+spellings in both directions, extra and duplicate rows, and every canonical
+rendering with its last section moved first.
 
 ## Fixture Corpora And The Artifact Preflight
 

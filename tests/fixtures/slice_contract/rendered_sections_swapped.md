@@ -80,6 +80,7 @@ Attempt tokens are resolved before rendering; this table never carries one.
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
 | 08_pkg/src/routing/route_cost.py | implementation | coder | modify |
+| 08_pkg/tests/test_route_cost.py | test | coder | create_once |
 | 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md | self_report | coder | create_once |
 
 No other file is writable. Review reports and verdict records are
@@ -100,11 +101,6 @@ Closure proof the review will look for:
 
 - A passing focused test run cited in the self-report
 
-## Non-Goals
-
-- No router policy change
-- No live Graphab execution
-
 ## Verification
 
 - `python -m unittest discover -s 08_pkg/tests`
@@ -119,6 +115,11 @@ Closure proof the review will look for:
 - When changed artifacts cite repository paths or `test_*` identifiers, run
   `python scripts/artifact_integrity_preflight.py <artifact> [<artifact> ...]`
   and resolve hard errors before handoff.
+
+## Non-Goals
+
+- No router policy change
+- No live Graphab execution
 
 ## Seat Conduct
 

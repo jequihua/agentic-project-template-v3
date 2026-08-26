@@ -193,6 +193,13 @@ status from the operating tool; being the last slice is never sufficient. The
 objective status owns no route: routing is the operating tool's dimension. No
 objective line appears inside `## Verdict`.
 
+Machine reading of the record is section-local and line-based: a report
+contains exactly one line starting with `## Closure Decision` and exactly one
+starting with `## Verdict` anywhere in the file (so never quote those heading
+lines in an example, fenced or not); the closure section is the two lines
+between them, and the verdict footer is the first non-empty line after the
+verdict heading. Lines elsewhere are not authority and are not counted.
+
 The reviewer also confirms the coder wrote only paths the coding prompt's write
 manifest assigns to the coder; a coder-written review report, verdict record,
 acceptance state, or routing state is a P1 authority finding

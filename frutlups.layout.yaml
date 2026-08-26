@@ -209,6 +209,7 @@ slice_prompt_contract:
     - "Seat Conduct"
     - "Self-Report"
     - "Definition Of Done"
+    - "Typed Entry"
   rendered_sections_conditional:
     - "Opening Gates"
     - "External Repositories"

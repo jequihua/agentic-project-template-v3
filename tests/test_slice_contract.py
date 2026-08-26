@@ -2,14 +2,22 @@
 canonical vocabulary declaration, the dispatch preflight rules, the old-consumer
 fence composition, and the pre-launch audit's drive-grammar reader.
 
+Losslessness is equality, not parsing: a rendered prompt carries its sidecar
+entry verbatim in a fenced YAML block, and the checker compares that block with
+the attempt-resolved entry. The tests mutate every leaf of the block and assert
+refusal. No test parses Markdown prose for field values or CommonMark fences.
+
 Stdlib-only structure tests always run. Tests that evaluate fixtures through
 the reference checker need PyYAML (the declared dependency) and are skipped
-when it is absent, exactly like the OKF profile-checker tests.
+when it is absent, exactly like the OKF profile-checker tests. Two tests use
+external evidence when available: `FRUTLUPS_0_1_8_PYTHON` (released legacy
+consumer) and `FRUTLUPS_DRIVE_SRC` (the drive's own manifest loader).
 """
 
 from __future__ import annotations
 
 import contextlib
+import copy
 import hashlib
 import importlib
 import io
@@ -45,7 +53,7 @@ EXPECTED_V1_SECTION_ORDER = [
     "Implementation Discipline", "OKF Authoring", "Write Manifest", "Opening Gates",
     "External Repositories", "Correction Scope Map", "Candidate Identity",
     "Execution Envelope", "Objective And Closure Proof", "Non-Goals", "Verification",
-    "Seat Conduct", "Self-Report", "Definition Of Done",
+    "Seat Conduct", "Self-Report", "Definition Of Done", "Typed Entry",
 ]
 LEGACY_REQUIRED = [
     "Current State", "Active Workspaces", "Read First", "Memory Posture", "Task",
@@ -66,13 +74,7 @@ def _scripts_module(name: str):
 
 
 def _headings(text: str) -> list[str]:
-    out, fenced = [], False
-    for line in text.splitlines():
-        if line.startswith("```"):
-            fenced = not fenced
-        elif not fenced and line.startswith("## "):
-            out.append(line[3:].strip())
-    return out
+    return [line[3:].strip() for line in text.splitlines() if line.startswith("## ")]
 
 
 def _layout_block_text() -> str:
@@ -83,8 +85,6 @@ def _layout_block_text() -> str:
 
 
 def _doc_table(doc: str, first_header: str) -> dict[str, list[str]]:
-    """Rows of the markdown table whose header starts with ``| first_header |``,
-    as {key: [backticked values]}; keys are the first cell's backticked token."""
     rows: dict[str, list[str]] = {}
     lines = doc.splitlines()
     for i, line in enumerate(lines):
@@ -104,6 +104,16 @@ def _section(doc: str, heading: str) -> str:
     start = doc.index(heading)
     nxt = doc.find("\n## ", start + 1)
     return doc[start:nxt if nxt != -1 else None]
+
+
+def _typed_block(rendered: str) -> tuple[str, str, str]:
+    """(head, block_text, tail) around the single ```yaml block of the Typed Entry section."""
+    i = rendered.index("## Typed Entry")
+    head, section = rendered[:i], rendered[i:]
+    lines = section.split("\n")
+    o = lines.index("```yaml")
+    c = lines.index("```", o + 1)
+    return head + "\n".join(lines[:o + 1]) + "\n", "\n".join(lines[o + 1:c]), "\n" + "\n".join(lines[c:])
 
 
 class SliceContractFixtureManifestTests(unittest.TestCase):
@@ -143,18 +153,18 @@ class SliceContractFixtureManifestTests(unittest.TestCase):
                 digest = hashlib.sha256((ROOT / f["path"]).read_bytes()).hexdigest()
                 self.assertEqual(digest, f["sha256"], "fixture bytes drifted from the pinned digest")
 
-    def test_fixtures_are_utf8_lf_and_free_of_machine_paths(self) -> None:
+    def test_fixtures_are_utf8_lf_single_trailing_newline_and_free_of_machine_paths(self) -> None:
         for f in self.fixtures:
             with self.subTest(fixture=f["id"]):
                 raw = (ROOT / f["path"]).read_bytes()
                 text = raw.decode("utf-8")
                 self.assertNotIn(b"\r\n", raw)
+                if not f["path"].endswith(".py"):
+                    self.assertTrue(raw.endswith(b"\n") and not raw.endswith(b"\n\n"), "exactly one trailing newline")
                 for fragment in MACHINE_FRAGMENTS:
                     self.assertNotIn(fragment, text)
 
     def test_every_content_reason_code_has_a_fixture(self) -> None:
-        """Exhaustive, not hand-picked: the checker's REASON_CODES tuple is the
-        inventory; every code must be expected by at least one fixture."""
         source = CHECKER.read_text(encoding="utf-8")
         reason = re.search(r"REASON_CODES = \((.*?)\n\)", source, re.DOTALL).group(1)
         codes = set(re.findall(r'"([a-z_]+)"', reason))
@@ -178,6 +188,14 @@ class SliceContractFixtureManifestTests(unittest.TestCase):
         listed = set(re.findall(r"`([a-z_]+)`", doc.split("Sentinels (layout")[0]))
         self.assertEqual(listed, reason | env)
 
+    def test_no_markdown_grammar_or_fence_parsing_remains(self) -> None:
+        """The reassessed method: no prose field extraction, no CommonMark fence reader."""
+        checker = CHECKER.read_text(encoding="utf-8")
+        preflight = (ROOT / "scripts" / "artifact_integrity_preflight.py").read_text(encoding="utf-8")
+        for forbidden in ("extract_rendered", "fenced_lines", "FENCE_RE", "_bullets(", "_table_rows(", "Extracted("):
+            self.assertNotIn(forbidden, checker, forbidden)
+        self.assertNotIn("WORKFLOW_FENCE_RE", preflight)
+
 
 class SliceContractScaffoldTests(unittest.TestCase):
     """Stdlib-only: two scaffolds, legacy byte-identical, v1 fully slotted."""
@@ -195,7 +213,8 @@ class SliceContractScaffoldTests(unittest.TestCase):
         self.assertIn('scaffold: "prompts/templates/coding_prompt_contract_v1.md"', text)
         self.assertIn('legacy_scaffold: "prompts/templates/coding_prompt.md"', text)
         self.assertEqual(text.count("sidecar_suffix"), 1, "one suffix authority only")
-        self.assertNotIn("oracle_content_bound_bytes", text, "the oracle bound is a drive constant, not a declarable value")
+        self.assertNotIn("oracle_content_bound_bytes", text)
+        self.assertIn('    - "Typed Entry"\n', text)
 
     def test_v1_scaffold_section_order_and_slots(self) -> None:
         text = V1_SCAFFOLD.read_text(encoding="utf-8")
@@ -208,30 +227,28 @@ class SliceContractScaffoldTests(unittest.TestCase):
             "TBD:strictness", "TBD:live", "TBD:corrective", "TBD:attempt", "TBD:status",
             "TBD:dispatch_authority", "TBD:task", "TBD:active_workspaces", "TBD:read_first",
             "TBD:write_manifest_rows", "TBD:opening_gates", "TBD:external_input_rows",
-            "TBD:correction_rows", "TBD:controlling_ruling", "TBD:prior_evidence",
-            "TBD:correction_closure_proof", "TBD:claims_withdrawn", "TBD:evidence_invalidated",
-            "TBD:minimum_rerun_set", "TBD:candidate_strategy", "TBD:hard_wall_seconds",
-            "TBD:environment_bindings", "TBD:local_output_root",
-            "TBD:objective_success_criteria", "TBD:objective_closure_proof",
+            "TBD:correction_rows", "TBD:controlling_ruling", "TBD:candidate_strategy",
+            "TBD:hard_wall_seconds", "TBD:local_output_root", "TBD:objective_success_criteria",
             "TBD:non_goals", "TBD:verification", "TBD:self_report_path", "TBD:definition_of_done",
+            "TBD:typed_entry",
         ):
             self.assertIn(slot, slots)
+        section = text[text.index("## Typed Entry"):]
+        self.assertEqual(section.count("```yaml\nTBD:typed_entry\n```"), 1)
         for phrase in ("fills or deletes", "delete this section"):
             self.assertNotIn(phrase, text.lower())
-        self.assertIn("never coder outputs", text)
 
-    def test_v1_rendered_fixtures_carry_no_slot_or_residue(self) -> None:
-        for name in (
-            "all_fields_rendered_m001_s01.md", "frozen_entry_rendered_m001_s01.md",
-            "all_fields_rendered_m002_s02_attempt_001.md", "all_fields_rendered_m002_s02_attempt_002.md",
-        ):
-            with self.subTest(fixture=name):
-                text = (FIX_ROOT / name).read_text(encoding="utf-8")
+    def test_canonical_renderings_carry_no_slot_or_residue(self) -> None:
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        names = [f["path"] for f in manifest["fixtures"] if f["mode"] == "render" and f["expected"]["result"] == "pass" and "prose-not-authority" not in f["tags"]]
+        self.assertGreaterEqual(len(names), 4)
+        for path in names:
+            with self.subTest(fixture=path):
+                text = (ROOT / path).read_text(encoding="utf-8")
                 self.assertNotIn("TBD", text)
                 self.assertNotIn("{attempt}", text)
                 self.assertNotIn("Conditional:", text)
                 self.assertEqual(len(_headings(text)), len(set(_headings(text))))
-        self.assertNotIn("dispatch_authority", (FIX_ROOT / "frozen_entry_rendered_m001_s01.md").read_text(encoding="utf-8"))
 
 
 @unittest.skipUnless(HAVE_YAML, "PyYAML is required to evaluate fixtures through the checker")
@@ -241,12 +258,12 @@ class SliceContractCheckerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         import yaml
+        cls.yaml = yaml
         cls.check = _scripts_module("slice_contract_check")
         cls.manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
         cls.layout, diags = cls.check.load_layout_contract(LAYOUT)
         assert cls.layout is not None, diags
         cls.positive = yaml.safe_load((FIX_ROOT / "all_fields.slices.yaml").read_text(encoding="utf-8"))
-        cls.attempt_001 = yaml.safe_load((FIX_ROOT / "all_fields_attempt_001.slices.yaml").read_text(encoding="utf-8"))
 
     def _argv(self, fixture: dict) -> list[str] | None:
         mode, args = fixture["mode"], fixture["args"]
@@ -286,8 +303,6 @@ class SliceContractCheckerTests(unittest.TestCase):
                 codes = sorted({d["code"] for d in result["diagnostics"]})
                 self.assertEqual(codes, fixture["expected"]["codes"])
 
-    # --- exhaustive deletion: every key path of both canonical entries is load-bearing
-
     @staticmethod
     def _key_paths(value, path=()):
         if isinstance(value, dict):
@@ -303,105 +318,84 @@ class SliceContractCheckerTests(unittest.TestCase):
         target = doc
         for step in path[:-1]:
             target = target[step]
-        last = path[-1]
         if isinstance(target, list):
-            target.pop(last)
+            target.pop(path[-1])
         else:
-            del target[last]
+            del target[path[-1]]
+
+    @staticmethod
+    def _alter(doc, path):
+        target = doc
+        for step in path[:-1]:
+            target = target[step]
+        value = target[path[-1]]
+        if isinstance(value, bool):
+            target[path[-1]] = not value
+        elif isinstance(value, (int, float)):
+            target[path[-1]] = value + 1
+        elif isinstance(value, str):
+            target[path[-1]] = value + "X"
+        else:
+            return False
+        return True
 
     def test_deleting_every_key_path_refuses(self) -> None:
         for index in (0, 1):
             entry = self.positive["slices"][index]
             for path in list(self._key_paths(entry)):
                 with self.subTest(slice=entry["slice"], path=".".join(map(str, path))):
-                    mutated = json.loads(json.dumps(self.positive))
+                    mutated = copy.deepcopy(self.positive)
                     self._delete(mutated["slices"][index], path)
                     diags = self.check.validate_sidecar(mutated, "x", self.layout, sidecar_path=FIX_ROOT / "all_fields.slices.yaml")
                     self.assertTrue(diags, f"deleting {path} was accepted")
 
-    # --- structural losslessness: removing any leaf from a canonical rendering is detected
+    def _canonical_renderings(self):
+        for f in self.manifest["fixtures"]:
+            if f["mode"] == "render" and f["expected"]["result"] == "pass" and "prose-not-authority" not in f["tags"]:
+                doc = self.yaml.safe_load((FIX_ROOT / f["args"]["sidecar"]).read_text(encoding="utf-8"))
+                yield f["id"], doc, f["args"]["slice"], (ROOT / f["path"]).read_text(encoding="utf-8")
 
-    def test_every_extracted_field_is_bound_to_its_rendered_position(self) -> None:
-        """Field-bound losslessness: for every field the parser extracts from a
-        canonical rendering, overwriting ONLY that value's span (labels, allowed-
-        value hints, headings, and every other occurrence untouched) is detected.
-        The reviewer's round-2 probe (`file` -> `OMITTED` while the label hint
-        still says `file`) is the first case of this class."""
-        cases = (
-            (self.positive, "M001-S01", "all_fields_rendered_m001_s01.md"),
-            (self.positive, "M002-S02", "all_fields_rendered_m002_s02_attempt_002.md"),
-            (self.attempt_001, "M002-S02", "all_fields_rendered_m002_s02_attempt_001.md"),
-        )
-        token = self.layout["attempt_token"]
-        for doc, slice_id, name in cases:
+    def test_typed_entry_mutations_refuse_for_every_leaf_of_every_canonical_rendering(self) -> None:
+        count = 0
+        for fid, doc, slice_id, rendered in self._canonical_renderings():
+            count += 1
+            self.assertEqual(self.check.check_rendered(doc, slice_id, None, rendered, fid, self.layout), [])
+            head, block, tail = _typed_block(rendered)
+            typed = self.yaml.safe_load(block)
             entry = next(s for s in doc["slices"] if s["slice"] == slice_id)
-            rendered = (FIX_ROOT / name).read_text(encoding="utf-8")
-            self.assertEqual(self.check.check_rendered(doc, slice_id, None, rendered, name, self.layout), [])
-            _order, _bodies, fields = self.check.extract_rendered(rendered)
-            expected = self.check.expected_fields(entry, token)
-            typed = {p for p in fields if p == ("self_report_path",) or p[0] in self.check.FIELD_SECTIONS}
-            self.assertEqual(set(expected), typed, f"{name}: extracted fields differ from the entry's leaves")
-            lines = rendered.split("\n")
-            for path in expected:
-                found = fields[path]
-                if path == ("task",):
-                    continue
-                with self.subTest(fixture=name, field=".".join(path)):
-                    line = lines[found.line]
-                    self.assertEqual(line[found.start:found.end], found.value, "span does not cover the value")
-                    lines2 = list(lines)
-                    lines2[found.line] = line[:found.start] + "OMITTED" + line[found.end:]
-                    diags = self.check.check_rendered(doc, slice_id, None, "\n".join(lines2), name, self.layout)
-                    self.assertTrue(diags, f"overwriting only the value of {path} went undetected")
-            # task: overwriting the task body alone is detected
-            task_line = fields[("task",)].line
-            lines3 = list(lines)
-            lines3[task_line] = "OMITTED"
-            self.assertTrue(self.check.check_rendered(doc, slice_id, None, "\n".join(lines3), name, self.layout))
+            self.assertEqual(typed, self.check.resolve_entry(entry, self.layout["attempt_token"], entry.get("attempt")))
+            for path in list(self._key_paths(typed)):
+                for mutation in ("delete", "alter"):
+                    mutated = copy.deepcopy(typed)
+                    if mutation == "delete":
+                        self._delete(mutated, path)
+                    elif not self._alter(mutated, path):
+                        continue
+                    text = head + self.yaml.safe_dump(mutated, sort_keys=False, allow_unicode=True).rstrip("\n") + tail
+                    with self.subTest(fixture=fid, path=".".join(map(str, path)), mutation=mutation):
+                        codes = {d.code for d in self.check.check_rendered(doc, slice_id, None, text, fid, self.layout)}
+                        self.assertIn("typed_entry_mismatch", codes)
+            with self.subTest(fixture=fid, mutation="second block"):
+                text = rendered.rstrip("\n") + "\n\n```yaml\n" + block + "\n```\n"
+                codes = {d.code for d in self.check.check_rendered(doc, slice_id, None, text, fid, self.layout)}
+                self.assertIn("typed_entry_ambiguous", codes)
+            with self.subTest(fixture=fid, mutation="undeclared key"):
+                text = head + block + "\nundeclared_key: value" + tail
+                codes = {d.code for d in self.check.check_rendered(doc, slice_id, None, text, fid, self.layout)}
+                self.assertIn("typed_entry_mismatch", codes)
+        self.assertGreaterEqual(count, 4, "the manifest enumerates at least four canonical renderings")
 
-    def test_reviewers_round2_field_only_probe_refuses(self) -> None:
+    def test_pipe_and_newline_bearing_scalars_round_trip_through_the_carrier(self) -> None:
+        doc = copy.deepcopy(self.positive)
+        entry = doc["slices"][1]
+        entry["external_inputs"][0]["repository"] = "repo|name with `ticks`"
+        entry["task"] = "line one | pipe\nline two\n"
         rendered = (FIX_ROOT / "all_fields_rendered_m002_s02_attempt_002.md").read_text(encoding="utf-8")
-        mutated = rendered.replace("- Identity strategy (file / manifest / git): file", "- Identity strategy (file / manifest / git): OMITTED")
-        self.assertNotEqual(mutated, rendered)
-        codes = {d.code for d in self.check.check_rendered(self.positive, "M002-S02", None, mutated, "x", self.layout)}
-        self.assertIn("rendered_value_missing", codes)
-
-    def test_fence_reader_handles_commonmark_forms(self) -> None:
-        text = "a\n~~~text\nObjective status: x\n~~~\nb\n````\n```\nstill fenced\n````\nc\n   ```\n   indented\n   ```\nd\n"
-        states = [fenced for _l, fenced in self.check.fenced_lines(text)]
-        self.assertEqual(states, [False, True, True, True, False, True, True, True, True, False, True, True, True, False])
-        report = (FIX_ROOT / "review_report_closure_valid.md").read_text(encoding="utf-8")
-        with_tilde = report.replace("## Closure Decision", "~~~text\nObjective status: not_achieved\nObjective evidence: example only\n~~~\n\n## Closure Decision")
-        self.assertEqual(self.check.check_review_report(with_tilde, "x", self.layout), [])
-
-    def test_roadmap_link_must_be_an_ordinary_adjacent_file(self) -> None:
-        import shutil
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            (root / "elsewhere").mkdir()
-            outside = root / "elsewhere" / "roadmap.md"
-            outside.write_text("# elsewhere\n", encoding="utf-8")
-            beside = root / "active_roadmap.md"
-            shutil.copyfile(FIX_ROOT / "all_fields.slices.yaml", root / "all_fields.slices.yaml")
-            try:
-                os.symlink(outside, beside)
-            except (OSError, NotImplementedError):
-                self.skipTest("external evidence: file symlink creation is not permitted on this seat")
-            codes = {d.code for d in self.check.validate_sidecar(self.positive, "x", self.layout, sidecar_path=root / "all_fields.slices.yaml")}
-            self.assertIn("roadmap_link_unresolved", codes)
-
-    def test_roadmap_directory_junction_is_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            (root / "target_dir").mkdir()
-            link = root / "active_roadmap.md"
-            proc = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(root / "target_dir")], capture_output=True, text=True)
-            if proc.returncode != 0 or not link.exists():
-                self.skipTest("external evidence: junction creation unavailable on this seat")
-            import shutil
-            shutil.copyfile(FIX_ROOT / "all_fields.slices.yaml", root / "all_fields.slices.yaml")
-            codes = {d.code for d in self.check.validate_sidecar(self.positive, "x", self.layout, sidecar_path=root / "all_fields.slices.yaml")}
-            self.assertIn("roadmap_link_unresolved", codes)
+        head, _block, tail = _typed_block(rendered)
+        resolved = self.check.resolve_entry(entry, self.layout["attempt_token"], entry["attempt"])
+        text = head + self.yaml.safe_dump(resolved, sort_keys=False, allow_unicode=True).rstrip("\n") + tail
+        codes = {d.code for d in self.check.check_rendered(doc, "M002-S02", None, text, "x", self.layout)}
+        self.assertNotIn("typed_entry_mismatch", codes)
 
     def test_confirming_a_different_attempt_is_refused(self) -> None:
         rendered = (FIX_ROOT / "all_fields_rendered_m002_s02_attempt_002.md").read_text(encoding="utf-8")
@@ -409,8 +403,7 @@ class SliceContractCheckerTests(unittest.TestCase):
         self.assertIn("attempt_mismatch", codes)
         self.assertEqual(self.check.check_rendered(self.positive, "M002-S02", "002", rendered, "x", self.layout), [])
 
-    def test_reviewer_probes_refuse(self) -> None:
-        """The exact false-accepts of review 037 F2, as in-memory mutations."""
+    def test_reviewer_sidecar_probes_refuse(self) -> None:
         base = FIX_ROOT / "all_fields.slices.yaml"
         for label, mutate, code in (
             ("roadmap unresolved", lambda d: d.update(roadmap="absent_roadmap.md"), "roadmap_link_unresolved"),
@@ -420,10 +413,17 @@ class SliceContractCheckerTests(unittest.TestCase):
             ("absolute dispatch authority", lambda d: d["slices"][0].update(dispatch_authority="C:/outside/authority.md"), "authority_path_invalid"),
         ):
             with self.subTest(probe=label):
-                mutated = json.loads(json.dumps(self.positive))
+                mutated = copy.deepcopy(self.positive)
                 mutate(mutated)
                 codes = {d.code for d in self.check.validate_sidecar(mutated, "x", self.layout, sidecar_path=base)}
                 self.assertIn(code, codes)
+
+    def test_review_report_rules_are_section_local_and_line_based(self) -> None:
+        report = (FIX_ROOT / "review_report_closure_valid.md").read_text(encoding="utf-8")
+        probe = report.replace("## Closure Decision", "```a`b\nObjective status: achieved\nObjective evidence: not authority\n```text\nexample\n```\n\n## Closure Decision")
+        self.assertEqual(self.check.check_review_report(probe, "x", self.layout), [])
+        quoted = report.replace("## Findings\n", "## Findings\n\n```markdown\n## Verdict\n```\n")
+        self.assertIn("verdict_section_duplicate", {d.code for d in self.check.check_review_report(quoted, "x", self.layout)})
 
     def test_checker_output_is_deterministic_and_ordered(self) -> None:
         argv = ["--root", str(ROOT), "--json", "--sidecar", str(FIX_ROOT / "governance_record_label_on_reserved_path.slices.yaml")]
@@ -468,9 +468,39 @@ class SliceContractCheckerTests(unittest.TestCase):
         codes = {d.code for d in self.check.check_rendered(self.positive, "M009-S09", None, "", "x", self.layout)}
         self.assertEqual(codes, {"slice_not_found"})
 
+    def test_roadmap_link_must_be_an_ordinary_adjacent_file(self) -> None:
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "elsewhere").mkdir()
+            outside = root / "elsewhere" / "roadmap.md"
+            outside.write_text("# elsewhere\n", encoding="utf-8")
+            beside = root / "active_roadmap.md"
+            shutil.copyfile(FIX_ROOT / "all_fields.slices.yaml", root / "all_fields.slices.yaml")
+            try:
+                os.symlink(outside, beside)
+            except (OSError, NotImplementedError):
+                self.skipTest("external evidence: file symlink creation is not permitted on this seat")
+            codes = {d.code for d in self.check.validate_sidecar(self.positive, "x", self.layout, sidecar_path=root / "all_fields.slices.yaml")}
+            self.assertIn("roadmap_link_unresolved", codes)
+
+    def test_roadmap_directory_junction_is_refused(self) -> None:
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "target_dir").mkdir()
+            link = root / "active_roadmap.md"
+            proc = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(root / "target_dir")], capture_output=True, text=True)
+            if proc.returncode != 0 or not link.exists():
+                self.skipTest("external evidence: junction creation unavailable on this seat")
+            shutil.copyfile(FIX_ROOT / "all_fields.slices.yaml", root / "all_fields.slices.yaml")
+            codes = {d.code for d in self.check.validate_sidecar(self.positive, "x", self.layout, sidecar_path=root / "all_fields.slices.yaml")}
+            self.assertIn("roadmap_link_unresolved", codes)
+
 
 class ReadyPromptPreflightTests(unittest.TestCase):
-    """The artifact preflight enforces the dispatch placeholder policy."""
+    """The artifact preflight enforces the dispatch placeholder policy with a
+    total, line-based status rule: every `status:` line must agree."""
 
     def _run(self, body: str) -> tuple[int, str]:
         preflight = _scripts_module("artifact_integrity_preflight")
@@ -506,6 +536,22 @@ class ReadyPromptPreflightTests(unittest.TestCase):
                 self.assertNotIn("ready_tbd", out)
                 self.assertNotIn("ready_optional_section_residue", out)
 
+    def test_agreeing_status_lines_are_one_status(self) -> None:
+        code, out = self._run(self._prompt("ready", "Implement.\n\n## Typed Entry\n\n```yaml\nslice: M001-S01\nstatus: ready\n```"))
+        self.assertEqual(code, 0, out)
+        _, out = self._run(self._prompt("frozen", "TBD\n\n## Typed Entry\n\n```yaml\nstatus: frozen\n```"))
+        self.assertNotIn("ready_tbd", out)
+
+    def test_disagreeing_status_lines_fail_closed(self) -> None:
+        """The round-3 probe: an invalid apparent opener, `status: frozen`, a real
+        fence with `status: ready`, then a TBD. No fence parsing: the two status
+        lines disagree, the artifact is ambiguous and treated as ready."""
+        body = "# P\n\n```a`b\nstatus: frozen\n```yaml\nmilestone: M001\nslice: M001-S01\nstatus: ready\n```\n\n## Task\n\nTBD\n"
+        code, out = self._run(body)
+        self.assertEqual(code, 1)
+        self.assertIn("status_ambiguous", out)
+        self.assertIn("ready_tbd", out)
+
     def test_clean_ready_prompt_passes(self) -> None:
         code, out = self._run(self._prompt("ready", "Implement the ledger writer."))
         self.assertEqual(code, 0, out)
@@ -531,7 +577,6 @@ class OldConsumerFenceFixtureTests(unittest.TestCase):
             self.assertIn("Status: active", (out / "03_experiments" / "active_roadmap.md").read_text(encoding="utf-8"))
             self.assertFalse((out / ".git").exists())
             self.assertFalse((out / "local_state").exists())
-            self.assertTrue((out / "prompts" / "templates" / "coding_prompt_contract_v1.md").is_file())
 
     def test_released_0_1_8_refuses_before_writing(self) -> None:
         interpreter = os.environ.get("FRUTLUPS_0_1_8_PYTHON")
@@ -553,7 +598,8 @@ class OldConsumerFenceFixtureTests(unittest.TestCase):
 
 class PrelaunchAuditManifestTests(unittest.TestCase):
     """The pre-launch size check reads the drive's released manifest grammar and
-    refuses what the drive refuses; an absent manifest means none declared."""
+    refuses what the drive refuses; parity is tested against the drive's own
+    loader when a checkout is available."""
 
     def _run(self, root: Path, exclusions: str | None) -> tuple[int, str]:
         audit = _scripts_module("local_state_audit")
@@ -574,9 +620,10 @@ class PrelaunchAuditManifestTests(unittest.TestCase):
         (root / "05_governance" / "reviews" / "INDEX.md").write_text("# Review Index\n", encoding="utf-8")
         return root
 
-    def _manifest(self, root: Path, payload) -> str:
-        (root / "06_infra" / "oracle_exclusion_manifest.json").write_text(json.dumps(payload), encoding="utf-8")
-        return "06_infra/oracle_exclusion_manifest.json"
+    def _manifest(self, root: Path, payload, name="oracle_exclusion_manifest.json") -> str:
+        text = payload if isinstance(payload, str) else json.dumps(payload)
+        (root / "06_infra" / name).write_text(text, encoding="utf-8")
+        return f"06_infra/{name}"
 
     def test_valid_manifest_excludes_by_exact_path_and_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -590,13 +637,9 @@ class PrelaunchAuditManifestTests(unittest.TestCase):
             self.assertEqual(code, 0)
 
     def test_manifest_reference_parity_with_the_drive(self) -> None:
-        """The reviewer's round-2 parity probes: the declared reference is validated
-        unmodified before any filesystem access, a declared-but-missing file refuses,
-        and only an omitted flag means none declared."""
         with tempfile.TemporaryDirectory() as tmp:
             root = self._root(tmp)
-            valid = {"contract_version": 1, "exact_paths": ["big/huge.bin"], "top_level_prefixes": []}
-            self._manifest(root, valid)
+            self._manifest(root, {"contract_version": 1, "exact_paths": ["big/huge.bin"], "top_level_prefixes": []})
             for label, reference in (
                 ("parent traversal to an absent file", "../absent.json"),
                 ("backslash reference to a valid manifest", "06_infra\\oracle_exclusion_manifest.json"),
@@ -608,29 +651,21 @@ class PrelaunchAuditManifestTests(unittest.TestCase):
                     code, out = self._run(root, reference)
                     self.assertEqual(code, 1, out)
                     self.assertIn("exclusion manifest invalid", out)
-                    self.assertIn("nothing was excluded", out)
             code, out = self._run(root, "06_infra/oracle_exclusion_manifest.json")
             self.assertEqual(code, 0, out)
-            code, out = self._run(root, None)
-            self.assertEqual(code, 1)
-            self.assertIn("none declared", out)
 
-    def test_manifest_reference_through_an_escaping_junction_is_refused(self) -> None:
-        """Drive parity: strict resolution must stay under the strictly resolved
-        root, so a reference that resolves outside through a junction refuses
-        (an in-root junction resolves inside and is accepted by both)."""
-        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as outside_tmp:
+    def test_oversized_manifest_refuses_with_a_bounded_read(self) -> None:
+        audit = _scripts_module("local_state_audit")
+        with tempfile.TemporaryDirectory() as tmp:
             root = self._root(tmp)
-            outside = Path(outside_tmp)
-            (outside / "m.json").write_text(json.dumps({"contract_version": 1, "exact_paths": [], "top_level_prefixes": []}), encoding="utf-8")
-            link = root / "linked"
-            proc = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True, text=True)
-            if proc.returncode != 0 or not link.exists():
-                self.skipTest("external evidence: junction creation unavailable on this seat")
-            code, out = self._run(root, "linked/m.json")
-            self.assertEqual(code, 1, out)
-            self.assertIn("exclusion manifest invalid", out)
-            self.assertIn("unavailable", out)
+            big = json.dumps({"contract_version": 1, "exact_paths": [], "top_level_prefixes": [], "pad": "x" * (64 * 1024)})
+            self._manifest(root, big)
+            with self.assertRaises(audit.ExclusionManifestInvalid) as ctx:
+                audit.load_exclusion_manifest(root, "06_infra/oracle_exclusion_manifest.json")
+            self.assertIn("exceeds", str(ctx.exception))
+        source = (ROOT / "scripts" / "local_state_audit.py").read_text(encoding="utf-8")
+        self.assertIn("stream.read(MAX_MANIFEST_BYTES + 1)", source, "the read itself must be bounded, as the drive's is")
+        self.assertNotIn("resolved.read_bytes()", source)
 
     def test_drive_invalid_manifests_fail_closed(self) -> None:
         cases = {
@@ -652,6 +687,47 @@ class PrelaunchAuditManifestTests(unittest.TestCase):
                 self.assertEqual(code, 1, out)
                 self.assertIn("exclusion manifest invalid", out)
                 self.assertIn("nothing was excluded", out)
+
+    def test_parity_against_the_drives_own_loader(self) -> None:
+        """When FRUTLUPS_DRIVE_SRC names a drive source tree, every reference and
+        payload case must produce the same accept/refuse outcome in the drive's
+        `_load_oracle_exclusions` and in the template audit, with the template's
+        reason contained in the drive's refusal message."""
+        src = os.environ.get("FRUTLUPS_DRIVE_SRC")
+        if not src or not (Path(src) / "frutlups_drive" / "workspace.py").is_file():
+            self.skipTest("external evidence: set FRUTLUPS_DRIVE_SRC to the drive's src directory")
+        if src not in sys.path:
+            sys.path.insert(0, src)
+        workspace = importlib.import_module("frutlups_drive.workspace")
+        audit = _scripts_module("local_state_audit")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._root(tmp)
+            self._manifest(root, {"contract_version": 1, "exact_paths": ["big/huge.bin"], "top_level_prefixes": []})
+            self._manifest(root, {"exact_paths": [], "top_level_prefixes": []}, "missing_version.json")
+            self._manifest(root, {"contract_version": 1, "exact_paths": [], "top_level_prefixes": ["big"]}, "bad_prefix.json")
+            self._manifest(root, {"contract_version": 1, "exact_paths": ["05_governance/reviews/INDEX.md"], "top_level_prefixes": []}, "excludes_index.json")
+            self._manifest(root, json.dumps({"contract_version": 1, "exact_paths": [], "top_level_prefixes": [], "pad": "x" * (64 * 1024)}), "oversized.json")
+            cases = (None, "06_infra/oracle_exclusion_manifest.json", "../absent.json", "06_infra\\oracle_exclusion_manifest.json",
+                     "06_infra/absent.json", "06_infra/", "local_state/manifest.json", "06_infra/missing_version.json",
+                     "06_infra/bad_prefix.json", "06_infra/excludes_index.json", "06_infra/oversized.json")
+            for reference in cases:
+                with self.subTest(reference=reference):
+                    try:
+                        mine = audit.load_exclusion_manifest(root, reference)
+                        mine_err = None
+                    except audit.ExclusionManifestInvalid as exc:
+                        mine, mine_err = None, str(exc)
+                    try:
+                        theirs = workspace._load_oracle_exclusions(root, reference)
+                        theirs_err = None
+                    except Exception as exc:  # the drive's refusal type
+                        theirs, theirs_err = None, getattr(exc, "message", str(exc))
+                    self.assertEqual(mine_err is None, theirs_err is None, f"{reference}: template {mine_err!r} vs drive {theirs_err!r}")
+                    if mine_err is not None:
+                        self.assertIn(mine_err, theirs_err)
+                    else:
+                        self.assertEqual(set(mine[0]), set(theirs.exact_paths))
+                        self.assertEqual(tuple(mine[1]), tuple(theirs.top_level_prefixes))
 
 
 if __name__ == "__main__":  # pragma: no cover

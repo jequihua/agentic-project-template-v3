@@ -56,6 +56,16 @@ source still fails; a guard test proves both directions. Project invariants
 over reviewed artifacts are the artifact preflight's job and stay
 unconditional.
 
+## Losslessness Is Equality, Not Parsing
+
+A rendered contract-v1 prompt carries its sidecar entry verbatim in a fenced
+YAML block (`Typed Entry`). The reference checker proves losslessness by
+strict-loading that block and comparing it to the attempt-resolved entry by
+equality; the test suite mutates every leaf of the block (delete, alter,
+duplicate into a second block) and asserts refusal. No test parses Markdown
+prose for field values, and no test or script parses CommonMark fences: the
+closure record and the workflow status are read by total, line-based rules.
+
 ## Fixture Corpora And The Artifact Preflight
 
 Fixture corpora under `tests/fixtures/` are exempt from the artifact-integrity

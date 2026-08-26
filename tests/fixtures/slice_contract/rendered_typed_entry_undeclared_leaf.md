@@ -1,38 +1,20 @@
-# Coding Prompt Template — Slice Prompt Contract v1
-
-Canonical rendered form for a sidecar slice entry
-(`docs/template_framework/slice_prompt_contract.md`). Every slot token below
-(the unresolved-sentinel prefix followed by a field name) is a typed slot a
-conforming renderer consumes from the sidecar; a rendered prompt carries none
-of them, and a renderer that cannot consume a slot must refuse rather than
-write. Sections marked *conditional* are removed entirely, marker line
-included, when the typed field is `none` or the flag is false — never left as
-placeholders. The metadata `attempt` and `dispatch_authority` lines are
-removed when the entry declares no attempt or no dispatch authority (a
-frozen entry). The final `Typed Entry` section carries the attempt-resolved
-sidecar entry as one fenced YAML block; it is the machine carrier the
-reference checker compares by equality, while the prose sections are the
-human rendering (contract section 8). This preamble is scaffold
-documentation and is not rendered. The
-legacy scaffold `prompts/templates/coding_prompt.md` is unchanged and remains
-the configured template for projects that have not opted in.
+# Coding Prompt M001-S01: Add the bounded route-cost ledger
 
 Workflow metadata (fenced Markdown content, **not** top-of-file OKF/profile
 frontmatter):
 
 ```yaml
-milestone: TBD:milestone
-slice: TBD:slice
-title: TBD:title
+milestone: M001
+slice: M001-S01
+title: Add the bounded route-cost ledger
 role: coder
-authored_by: TBD:authored_by
-mode: TBD:mode
-strictness: TBD:strictness
-live: TBD:live
-corrective: TBD:corrective
-attempt: TBD:attempt
-status: TBD:status
-dispatch_authority: TBD:dispatch_authority
+authored_by: architect_reviewer
+mode: normal implementation
+strictness: Level 3
+live: false
+corrective: false
+status: ready
+dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
 ```
 
 ## Current State
@@ -45,11 +27,13 @@ workspace set, next action, and current prompt/review frontier.
 
 ## Active Workspaces
 
-- TBD:active_workspaces
+- `08_pkg`
+- `05_governance`
 
 ## Read First
 
-- TBD:read_first
+- `PROJECT_STATE.md`
+- `08_pkg/CONTEXT.md`
 
 ## Memory Posture
 
@@ -69,7 +53,8 @@ activation authority (`docs/template_framework/memory_modes.md`):
 
 ## Task
 
-TBD:task
+Implement the route-cost ledger writer in the package and cover it with
+table-driven tests. Preserve the existing CLI surface.
 
 ## Implementation Discipline
 
@@ -94,87 +79,13 @@ Attempt tokens are resolved before rendering; this table never carries one.
 
 | Exact path | Artifact type | Role owner | Retry policy |
 | --- | --- | --- | --- |
-| TBD:write_manifest_rows |
+| 08_pkg/src/routing/route_cost.py | implementation | coder | modify |
+| 08_pkg/tests/test_route_cost.py | test | coder | create_once |
+| 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md | self_report | coder | create_once |
 
 No other file is writable. Review reports and verdict records are
 reviewer/governed artifacts and are never coder outputs. Directory, glob, or
 neighbouring-file authority does not exist.
-
-## Opening Gates
-
-*Conditional: rendered only when the entry declares gates.*
-
-This slice may start only when every gate below is satisfied; a `ready`
-status also requires the recorded dispatch authority named in the metadata.
-
-- TBD:opening_gates
-
-## External Repositories
-
-*Conditional: rendered only when the entry declares external inputs.*
-Repositories not listed are out of scope: do not snapshot them, and their
-activity is never a gate (`docs/template_framework/external_repository_roles.md`).
-
-| Repository | Role | Exact consumed surface or write envelope | Identity basis |
-| --- | --- | --- | --- |
-| TBD:external_input_rows |
-
-## Correction Scope Map
-
-*Conditional: rendered only for corrective entries*
-(`docs/template_framework/closure_convergence.md`).
-
-- Findings addressed: the controlling delta table below governs this slice.
-  When an amendment changes a disposition, a new table placed here supersedes
-  earlier task wording; history stays in the amendment record.
-
-| Finding | Violated invariant | Prior disposition | Controlling authority action | Coder obligation | Required closure proof |
-| --- | --- | --- | --- | --- | --- |
-| TBD:correction_rows |
-
-- Controlling ruling: TBD:controlling_ruling
-- Prior evidence identities:
-  - TBD:prior_evidence
-- Required closure proof:
-  - TBD:correction_closure_proof
-- Allowed files and claims: exactly the write manifest above (derived; no
-  separate typed field).
-- Claims withdrawn or narrowed: TBD:claims_withdrawn
-- Evidence invalidated: TBD:evidence_invalidated
-- Minimum rerun set:
-  - TBD:minimum_rerun_set
-
-## Candidate Identity
-
-*Conditional: rendered only when the entry freezes an identity-bound
-candidate* (`docs/template_framework/candidate_review_acceptance.md`).
-
-- Identity strategy (file / manifest / git): TBD:candidate_strategy
-- Candidate paths:
-  - TBD:candidate_paths
-- Identity value recorded at freeze: TBD:candidate_identity_value
-- Review and acceptance records land outside the candidate.
-
-## Execution Envelope
-
-*Conditional: rendered only for live entries.* The frozen authority for this
-slice's live work; the human gate in `06_infra/live_validation_gate.md`
-records approval and the launch word against it. Budgets and walls are inputs
-the governing runner validates against its own policy and gate; an envelope
-exceeding them is refused at admission, never silently overridden.
-
-- Timing probe: TBD:timing_probe_command (expected TBD:timing_probe_seconds s)
-- Agent/model budget: TBD:agent_budget_seconds s
-- Scientific subprocess budget: TBD:subprocess_budget_seconds s
-- Expected wall: TBD:expected_wall_seconds s; hard wall: TBD:hard_wall_seconds s
-- Frozen override: TBD:frozen_override
-- Environment bindings (name and value hash only; values live in the runner's policy): TBD:environment_bindings
-- Identities (arm / group / order / attempt): TBD:identities
-- Retained bytes max: TBD:retained_bytes_max
-- Local output root: TBD:local_output_root
-- Cleanup: TBD:cleanup
-- Negative result handling: TBD:negative_result_handling
-- Stopped result handling: TBD:stopped_result_handling
 
 ## Objective And Closure Proof
 
@@ -184,19 +95,21 @@ objective is not achieved; that never implies milestone completion.
 
 Success criteria:
 
-- TBD:objective_success_criteria
+- The ledger records one row per admitted route with monotonic timestamps
 
 Closure proof the review will look for:
 
-- TBD:objective_closure_proof
+- A passing focused test run cited in the self-report
 
 ## Non-Goals
 
-- TBD:non_goals
+- No router policy change
+- No live Graphab execution
 
 ## Verification
 
-- TBD:verification
+- `python -m unittest discover -s 08_pkg/tests`
+- `python scripts/artifact_integrity_preflight.py 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md`
 - When cases share setup and assertion shape, prefer table-driven tests or
   `subTest`; keep tests separate when behavior, setup, or the failure story
   differs, and assert exact contract values individually.
@@ -225,7 +138,7 @@ restated here. In short:
 
 Write a self-report at:
 
-`TBD:self_report_path`
+`05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md`
 
 Use the canonical schema in `prompts/templates/self_report.md`. State which
 closure-proof items you produced and which you did not; the objective status
@@ -240,7 +153,8 @@ Do not create a commit unless this prompt explicitly instructs it (see
 
 ## Definition Of Done
 
-- TBD:definition_of_done
+- Ledger writer implemented and tested
+- Self-report written at the manifest path
 
 ## Typed Entry
 
@@ -251,5 +165,58 @@ entry (`docs/template_framework/slice_prompt_contract.md`). The prose
 sections above are the human rendering of the same entry.
 
 ```yaml
-TBD:typed_entry
+slice: M001-S01
+title: Add the bounded route-cost ledger
+milestone: M001
+authored_by: architect_reviewer
+status: ready
+dispatch_authority: 05_governance/human_owner_notes/002_2026-08-26_m001_s01_dispatch.md
+strictness: Level 3
+mode: normal implementation
+live: false
+corrective: false
+task: 'Implement the route-cost ledger writer in the package and cover it with
+
+  table-driven tests. Preserve the existing CLI surface.
+
+  '
+active_workspaces:
+- 08_pkg
+- 05_governance
+read_first:
+- PROJECT_STATE.md
+- 08_pkg/CONTEXT.md
+writes:
+- path: 08_pkg/src/routing/route_cost.py
+  artifact_type: implementation
+  role_owner: coder
+  retry_policy: modify
+- path: 08_pkg/tests/test_route_cost.py
+  artifact_type: test
+  role_owner: coder
+  retry_policy: create_once
+- path: 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md
+  artifact_type: self_report
+  role_owner: coder
+  retry_policy: create_once
+non_goals:
+- No router policy change
+- No live Graphab execution
+verification:
+- python -m unittest discover -s 08_pkg/tests
+- python scripts/artifact_integrity_preflight.py 05_governance/reviews/m001/m001_s01_route_cost_ledger_self_report.md
+opening_gates: none
+external_inputs: none
+candidate_identity: none
+correction: none
+execution_envelope: none
+objective:
+  success_criteria:
+  - The ledger records one row per admitted route with monotonic timestamps
+  closure_proof:
+  - A passing focused test run cited in the self-report
+extra_key: undeclared
+definition_of_done:
+- Ledger writer implemented and tested
+- Self-report written at the manifest path
 ```

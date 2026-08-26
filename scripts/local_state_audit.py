@@ -85,7 +85,8 @@ def load_exclusion_manifest(root: Path, declared) -> tuple[set, tuple]:
         resolved.relative_to(resolved_root)
         if manifest_path.is_symlink() or _is_junction(manifest_path) or not resolved.is_file():
             raise OSError
-        data = resolved.read_bytes()
+        with open(resolved, "rb") as stream:
+            data = stream.read(MAX_MANIFEST_BYTES + 1)  # bounded, as the drive reads
     except (OSError, ValueError):
         raise ExclusionManifestInvalid("the declared file is unavailable") from None
     if len(data) > MAX_MANIFEST_BYTES:

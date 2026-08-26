@@ -6,10 +6,12 @@ and the closure record of a review report. The closed vocabularies are read
 from the ONE canonical declaration, the `slice_prompt_contract` block of
 `frutlups.layout.yaml`; nothing here restates them.
 
-The rendered-prompt check is a keyed parse: every typed field is extracted from
-its rendered position (metadata line, bullet, table cell, labeled bullet) and
-compared with the entry by equality, so label text, duplicated text, or a
-cross-section occurrence can never stand in for a field's value.
+The rendered-prompt check has no Markdown grammar. A rendered prompt carries the
+attempt-resolved sidecar entry verbatim in its `## Typed Entry` fenced YAML
+block; conformance is strict-loaded block == resolved entry, plus the
+unambiguous prose checks (section presence and order, no sentinel or residue,
+exact write-manifest rows, the self-report path line). Review-report closure
+authority is section-local and line-based; no fence parsing exists anywhere.
 
 This is a reference implementation for the template's own fixtures and for
 project-side preflight. It is never dispatch authority. Downstream tools keep
@@ -46,18 +48,10 @@ ATTEMPT_RE = re.compile(r"^(?!000)\d{3}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 STRICTNESS_RE = re.compile(r"^Level [1-4]$")
 HEADING_RE = re.compile(r"^## (.+?)\s*$")
-FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+TYPED_ENTRY_HEADING = "## Typed Entry"
+TYPED_ENTRY_OPEN = "```yaml"
+TYPED_ENTRY_CLOSE = "```"
 VERDICT_FOOTER_RE = re.compile(r"^Verdict: (pass|needs_work|blocked|override) - next: \S.*$")
-GATE_RE = re.compile(
-    r"^(?P<kind>[a-z_]+): (?P<reference>.+?)"
-    r"(?: \(sha256 (?P<sha256>[0-9a-f]{64})\))?"
-    r"(?: \(repository (?P<repository>[^,]+), tag (?P<tag>[^,]+), commit (?P<commit>[^)]+)\))?$"
-)
-PROBE_RE = re.compile(r"^`(?P<command>.+)` \(expected (?P<expected_seconds>[0-9.]+) s\)$")
-WALLS_RE = re.compile(r"^(?P<expected_wall_seconds>[0-9.]+) s; hard wall: (?P<hard_wall_seconds>[0-9.]+) s$")
-SECONDS_RE = re.compile(r"^(?P<value>[0-9.]+) s$")
-BINDING_RE = re.compile(r"^(?P<name>\S+) sha256 (?P<value_sha256>[0-9a-f]{64})$")
-EVIDENCE_RE = re.compile(r"^`(?P<path>[^`]+)` sha256 (?P<sha256>[0-9a-f]{64})$")
 RESIDUE_PHRASES = (
     "delete this section", "contract v1 section", "fills or deletes",
     "conditional: rendered only", "this preamble is scaffold documentation",
@@ -126,13 +120,14 @@ REASON_CODES = (
     # rendered prompt
     "attempt_mismatch", "rendered_section_missing", "rendered_section_duplicate",
     "rendered_section_unexpected", "rendered_sentinel_residue", "rendered_section_residue",
-    "rendered_token_unresolved", "rendered_metadata_missing",
-    "rendered_manifest_row_missing", "rendered_attempt_path_reuse", "rendered_value_missing",
+    "rendered_token_unresolved", "rendered_manifest_row_missing",
+    "rendered_self_report_path_missing", "rendered_attempt_path_reuse",
+    "typed_entry_missing", "typed_entry_ambiguous", "typed_entry_unparseable",
+    "typed_entry_mismatch",
     # review report
     "closure_section_missing", "closure_section_duplicate", "closure_after_verdict",
     "closure_not_adjacent", "closure_line_count", "objective_status_line_missing",
-    "objective_status_invalid", "objective_status_duplicate",
-    "objective_evidence_line_missing", "objective_evidence_duplicate",
+    "objective_status_invalid", "objective_evidence_line_missing",
     "verdict_section_missing", "verdict_section_duplicate", "verdict_footer_invalid",
     "objective_status_in_verdict",
 )
@@ -151,16 +146,6 @@ class Diagnostic:
     location: str
     message: str
     severity: str = "error"
-
-
-@dataclass
-class Extracted:
-    """One rendered field value with the exact span of its value text."""
-    path: tuple
-    value: str
-    line: int
-    start: int
-    end: int
 
 
 class _StrictLoadError(Exception):
@@ -196,6 +181,31 @@ def _load_yaml_file(path: Path) -> object:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise _StrictLoadError("input is not valid UTF-8") from exc
+    try:
+        return yaml.load(text, Loader=_Strict)  # noqa: S506 - SafeLoader subclass
+    except yaml.YAMLError as exc:
+        raise _StrictLoadError(f"YAML syntax error: {exc}") from exc
+
+
+def _load_yaml_text(text: str) -> object:
+    """Strict, duplicate-rejecting, bounded parse of an in-memory YAML block."""
+    import yaml  # lazy: the declared dependency
+
+    class _Strict(yaml.SafeLoader):
+        pass
+
+    def _construct_mapping(loader, node, deep=False):
+        seen = set()
+        for key_node, _ in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            if key in seen:
+                raise _StrictLoadError(f"duplicate mapping key: {key!r}")
+            seen.add(key)
+        return yaml.SafeLoader.construct_mapping(loader, node, deep=deep)
+
+    _Strict.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping)
+    if len(text.encode("utf-8")) > MAX_INPUT_BYTES:
+        raise _StrictLoadError(f"input exceeds {MAX_INPUT_BYTES} bytes")
     try:
         return yaml.load(text, Loader=_Strict)  # noqa: S506 - SafeLoader subclass
     except yaml.YAMLError as exc:
@@ -670,282 +680,61 @@ def check_alignment(a: dict, b: dict, rel_a: str, rel_b: str) -> list[Diagnostic
     return d
 
 
-# --- fenced blocks and sections (CommonMark backtick and tilde fences) --------
+# --- rendered prompt: the typed entry is the carrier ------------------------
 
 
-def fenced_lines(text: str) -> list[tuple[str, bool]]:
-    """(line, inside_fence) for every line. A fence opens with up to three spaces
-    of indent and three or more backticks or tildes; it closes on a line of the
-    same character at least as long, with only whitespace after it. Fence lines
-    themselves count as fenced."""
-    out: list[tuple[str, bool]] = []
-    open_char, open_len = "", 0
-    for line in text.splitlines():
-        m = FENCE_RE.match(line)
-        if open_char:
-            if m and m.group(1)[0] == open_char and len(m.group(1)) >= open_len and not m.group(2).strip():
-                out.append((line, True))
-                open_char, open_len = "", 0
-            else:
-                out.append((line, True))
-            continue
-        if m and (open_char := m.group(1)[0]):
-            open_len = len(m.group(1))
-            out.append((line, True))
-            continue
-        out.append((line, False))
-    return out
+def resolve_entry(entry, token: str, attempt: str | None):
+    """The entry with every string leaf attempt-resolved (the typed block's content)."""
+    if isinstance(entry, dict):
+        return {k: resolve_entry(v, token, attempt) for k, v in entry.items()}
+    if isinstance(entry, list):
+        return [resolve_entry(v, token, attempt) for v in entry]
+    if isinstance(entry, str):
+        return resolve_attempt(entry, token, attempt)
+    return entry
 
 
-def _sections(text: str) -> tuple[list[str], dict[str, list[tuple[int, str]]]]:
-    """Heading order and, per heading, the numbered lines of its body (fenced
-    lines included, fenced headings ignored)."""
+def _heading_sections(text: str) -> tuple[list[str], dict[str, list[str]]]:
+    """Line-start `## ` headings in file order and each heading's body lines.
+    Fences are ignored by design: a fenced example that carries a heading line
+    is a heading line (the contract forbids that residue)."""
     order: list[str] = []
-    bodies: dict[str, list[tuple[int, str]]] = {}
+    bodies: dict[str, list[str]] = {"": []}
     current = ""
-    for number, (line, fenced) in enumerate(fenced_lines(text)):
-        m = None if fenced else HEADING_RE.match(line)
+    for line in text.splitlines():
+        m = HEADING_RE.match(line)
         if m:
             current = m.group(1)
             order.append(current)
             bodies.setdefault(current, [])
             continue
-        bodies.setdefault(current, []).append((number, line))
+        bodies.setdefault(current, []).append(line)
     return order, bodies
 
 
-# --- rendered prompt: keyed extraction ---------------------------------------
-
-
-def _strip_ticks(value: str) -> str:
-    v = value.strip()
-    return v[1:-1] if len(v) >= 2 and v.startswith("`") and v.endswith("`") else v
-
-
-def _span(line_no: int, line: str, value: str) -> tuple[int, int, int]:
-    start = line.rfind(value) if value else len(line)
-    return line_no, start, start + len(value)
-
-
-def _bullets(lines: list[tuple[int, str]]):
-    """Top-level bullets with their nested `  - ` children:
-    (line_no, full_line, text, [(line_no, full_line, text)...])."""
-    items = []
-    for number, line in lines:
-        if line.startswith("- "):
-            items.append((number, line, line[2:], []))
-        elif line.startswith("  - ") and items:
-            items[-1][3].append((number, line, line[4:]))
-    return items
-
-
-def _table_rows(lines: list[tuple[int, str]]):
-    rows = []
-    for number, line in lines:
-        if line.startswith("|") and not line.startswith("| ---") and not line.startswith("| Exact") and not line.startswith("| Repository") and not line.startswith("| Finding"):
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            rows.append((number, line, cells))
-    return rows
-
-
-def extract_rendered(text: str) -> tuple[list[str], dict[str, list[tuple[int, str]]], dict[tuple, Extracted]]:
-    """Parse a rendered v1 prompt into (section order, section bodies, fields keyed
-    by the entry's key path). Fields are found at their rendered positions only."""
-    order, bodies = _sections(text)
-    fields: dict[tuple, Extracted] = {}
-
-    def put(path: tuple, value: str, line_no: int, line: str) -> None:
-        n, s, e = _span(line_no, line, value)
-        fields[path] = Extracted(path, value, n, s, e)
-
-    # metadata: the first fenced block in the preamble
-    in_block = False
-    for number, line in bodies.get("", []):
-        if FENCE_RE.match(line):
-            if in_block:
-                break
-            in_block = True
-            continue
-        if in_block:
-            m = re.match(r"^([a-z_]+): (.*)$", line)
-            if m:
-                value = m.group(2)
-                if len(value) >= 2 and value[0] == value[-1] == '"':
-                    value = value[1:-1]
-                put((m.group(1),), value, number, line)
-
-    def exact_list(section: str, key: tuple, leading_only: int | None = None) -> None:
-        items = _bullets(bodies.get(section, []))
-        if leading_only is not None:
-            items = items[:leading_only]
-        for i, (number, line, item, _children) in enumerate(items):
-            put(key + (str(i),), _strip_ticks(item), number, line)
-
-    exact_list("Active Workspaces", ("active_workspaces",))
-    exact_list("Read First", ("read_first",))
-    exact_list("Non-Goals", ("non_goals",))
-    exact_list("Definition Of Done", ("definition_of_done",))
-    # task: the section body joined
-    task_lines = [line for _n, line in bodies.get("Task", [])]
-    task_text = "\n".join(task_lines).strip()
-    if task_text:
-        first = next((n for n, l in bodies.get("Task", []) if l.strip()), 0)
-        fields[("task",)] = Extracted(("task",), task_text, first, 0, 0)
-    # tables
-    for i, (number, line, cells) in enumerate(_table_rows(bodies.get("Write Manifest", []))):
-        for key, cell in zip(("path", "artifact_type", "role_owner", "retry_policy"), cells):
-            put(("writes", str(i), key), cell, number, line)
-    for i, (number, line, cells) in enumerate(_table_rows(bodies.get("External Repositories", []))):
-        for key, cell in zip(("repository", "role", "path", "identity"), cells):
-            put(("external_inputs", str(i), key), cell, number, line)
-    for i, (number, line, cells) in enumerate(_table_rows(bodies.get("Correction Scope Map", []))):
-        for key, cell in zip(FINDING_REQUIRED, cells):
-            put(("correction", "findings", str(i), key), cell, number, line)
-    # gates
-    for i, (number, line, item, _c) in enumerate(_bullets(bodies.get("Opening Gates", []))):
-        m = GATE_RE.match(item)
-        if not m:
-            continue
-        for key, value in m.groupdict().items():
-            if value is not None:
-                put(("opening_gates", str(i), key), value.strip(), number, line)
-
-    def labeled(section: str) -> dict[str, tuple]:
-        out = {}
-        for number, line, item, children in _bullets(bodies.get(section, [])):
-            if ": " in item:
-                label, value = item.split(": ", 1)
-                out[label] = (number, line, value, children)
-            elif item.endswith(":"):
-                out[item[:-1]] = (number, line, "", children)
-        return out
-
-    def list_field(section_fields: dict, label: str, key: tuple, transform=None) -> None:
-        if label not in section_fields:
-            return
-        number, item, value, children = section_fields[label]
-        if children:
-            for i, (cn, cline, child) in enumerate(children):
-                if transform:
-                    for sub_key, sub_value in transform(child):
-                        put(key + (str(i), sub_key), sub_value, cn, cline)
-                else:
-                    put(key + (str(i),), _strip_ticks(child), cn, cline)
-        elif value.strip():
-            put(key, value.strip(), number, item)
-
-    corr = labeled("Correction Scope Map")
-    if "Controlling ruling" in corr:
-        number, item, value, _c = corr["Controlling ruling"]
-        if value.startswith("disputed; see "):
-            put(("correction", "controlling_ruling", "disputed"), _strip_ticks(value[len("disputed; see "):]), number, item)
-        else:
-            put(("correction", "controlling_ruling"), _strip_ticks(value), number, item)
-    list_field(corr, "Prior evidence identities", ("correction", "prior_evidence"),
-               lambda child: [(k, v) for k, v in (EVIDENCE_RE.match(child).groupdict().items() if EVIDENCE_RE.match(child) else [])])
-    list_field(corr, "Required closure proof", ("correction", "closure_proof"))
-    list_field(corr, "Claims withdrawn or narrowed", ("correction", "claims_withdrawn"))
-    list_field(corr, "Evidence invalidated", ("correction", "evidence_invalidated"))
-    list_field(corr, "Minimum rerun set", ("correction", "minimum_rerun_set"))
-
-    cand = labeled("Candidate Identity")
-    if "Identity strategy (file / manifest / git)" in cand:
-        number, item, value, _c = cand["Identity strategy (file / manifest / git)"]
-        put(("candidate_identity", "strategy"), value.strip(), number, item)
-    list_field(cand, "Candidate paths", ("candidate_identity", "paths"))
-    if "Identity value recorded at freeze" in cand:
-        number, item, value, _c = cand["Identity value recorded at freeze"]
-        put(("candidate_identity", "identity_value"), value.strip(), number, item)
-
-    env = labeled("Execution Envelope")
-    if "Timing probe" in env:
-        number, item, value, _c = env["Timing probe"]
-        m = PROBE_RE.match(value.strip())
-        if m:
-            put(("execution_envelope", "timing_probe", "command"), m.group("command"), number, item)
-            put(("execution_envelope", "timing_probe", "expected_seconds"), m.group("expected_seconds"), number, item)
-    for label, key in (("Agent/model budget", "agent_budget_seconds"), ("Scientific subprocess budget", "subprocess_budget_seconds")):
-        if label in env:
-            number, item, value, _c = env[label]
-            m = SECONDS_RE.match(value.strip())
-            if m:
-                put(("execution_envelope", key), m.group("value"), number, item)
-    if "Expected wall" in env:
-        number, item, value, _c = env["Expected wall"]
-        m = WALLS_RE.match(value.strip())
-        if m:
-            put(("execution_envelope", "expected_wall_seconds"), m.group("expected_wall_seconds"), number, item)
-            put(("execution_envelope", "hard_wall_seconds"), m.group("hard_wall_seconds"), number, item)
-    if "Frozen override" in env:
-        number, item, value, _c = env["Frozen override"]
-        v = value.strip()
-        if v.startswith("authority "):
-            put(("execution_envelope", "frozen_override", "authority"), _strip_ticks(v[len("authority "):]), number, item)
-        else:
-            put(("execution_envelope", "frozen_override"), v, number, item)
-    list_field(env, "Environment bindings (name and value hash only; values live in the runner's policy)", ("execution_envelope", "environment_bindings"),
-               lambda child: [(k, v) for k, v in (BINDING_RE.match(child).groupdict().items() if BINDING_RE.match(child) else [])])
-    list_field(env, "Identities (arm / group / order / attempt)", ("execution_envelope", "identities"))
-    for label, key in (("Retained bytes max", "retained_bytes_max"), ("Local output root", "local_output_root"), ("Cleanup", "cleanup"),
-                       ("Negative result handling", "negative_result_handling"), ("Stopped result handling", "stopped_result_handling")):
-        if label in env:
-            number, item, value, _c = env[label]
-            put(("execution_envelope", key), _strip_ticks(value), number, item)
-    # objective: two lists split by their label lines
-    obj_lines = bodies.get("Objective And Closure Proof", [])
-    current_key = None
-    counters = {"success_criteria": 0, "closure_proof": 0}
-    for number, line in obj_lines:
-        if line.startswith("Success criteria:"):
-            current_key = "success_criteria"
-        elif line.startswith("Closure proof the review will look for:"):
-            current_key = "closure_proof"
-        elif line.startswith("- ") and current_key:
-            put(("objective", current_key, str(counters[current_key])), _strip_ticks(line[2:]), number, line)
-            counters[current_key] += 1
-    # verification: the leading bullets are the typed values (static bullets follow)
-    for i, (number, line, item, _c) in enumerate(_bullets(bodies.get("Verification", []))):
-        if item.startswith("When cases share") or item.startswith("If this prompt") or item.startswith("When changed artifacts"):
-            break
-        put(("verification", str(i)), _strip_ticks(item), number, line)
-    # self-report path: first backticked token in the section
-    for number, line in bodies.get("Self-Report", []):
-        m = re.match(r"^`([^`]+)`$", line.strip())
-        if m:
-            fields[("self_report_path",)] = Extracted(("self_report_path",), m.group(1), number, line.find(m.group(1)), line.find(m.group(1)) + len(m.group(1)))
-            break
-    return order, bodies, fields
-
-
-FIELD_SECTIONS = {
-    "slice": "", "title": "", "milestone": "", "authored_by": "", "status": "",
-    "dispatch_authority": "", "attempt": "", "strictness": "", "mode": "", "live": "",
-    "corrective": "",
-    "task": "Task", "active_workspaces": "Active Workspaces", "read_first": "Read First",
-    "writes": "Write Manifest", "non_goals": "Non-Goals", "verification": "Verification",
-    "opening_gates": "Opening Gates", "external_inputs": "External Repositories",
-    "candidate_identity": "Candidate Identity", "correction": "Correction Scope Map",
-    "execution_envelope": "Execution Envelope", "objective": "Objective And Closure Proof",
-    "definition_of_done": "Definition Of Done",
-}
-
-
-def expected_fields(entry: dict, token: str) -> dict[tuple, str]:
-    """The entry's scalar leaves as the rendered form must carry them."""
-    attempt = entry.get("attempt") if isinstance(entry.get("attempt"), str) else None
-    expected: dict[tuple, str] = {}
-    for key, value in entry.items():
-        if key not in FIELD_SECTIONS or (value == "none" and FIELD_SECTIONS[key]):
-            continue
-        if key == "task":
-            expected[("task",)] = str(value).strip()
-            continue
-        for path, leaf in iter_leaves(value, (key,)):
-            expected[path] = resolve_attempt(_leaf_text(leaf), token, attempt)
-    for w in entry.get("writes", []) if isinstance(entry.get("writes"), list) else []:
-        if isinstance(w, dict) and w.get("artifact_type") == "self_report" and w.get("role_owner") == "coder":
-            expected[("self_report_path",)] = resolve_attempt(str(w.get("path")), token, attempt)
-    return expected
+def _first_diff(expected, found, path=()) -> str:
+    """Key path of the first difference between two typed values."""
+    if isinstance(expected, dict) and isinstance(found, dict):
+        for key in list(expected) + [k for k in found if k not in expected]:
+            if key not in found:
+                return ".".join(path + (str(key),)) + " (missing)"
+            if key not in expected:
+                return ".".join(path + (str(key),)) + " (undeclared)"
+            sub = _first_diff(expected[key], found[key], path + (str(key),))
+            if sub:
+                return sub
+        return ""
+    if isinstance(expected, list) and isinstance(found, list):
+        if len(expected) != len(found):
+            return ".".join(path) + f" (length {len(found)}, expected {len(expected)})"
+        for i, (a, b) in enumerate(zip(expected, found)):
+            sub = _first_diff(a, b, path + (str(i),))
+            if sub:
+                return sub
+        return ""
+    if expected != found or type(expected) is not type(found):
+        return ".".join(path) + f" (renders {found!r}, expected {expected!r})"
+    return ""
 
 
 def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: str, rel: str, layout: dict) -> list[Diagnostic]:
@@ -962,7 +751,7 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
     if attempt_arg is not None and attempt_arg != entry_attempt:
         err("attempt_mismatch", f"--attempt {attempt_arg} does not match the entry's attempt {entry_attempt!r}; an entry has one attempt identity")
     attempt = entry_attempt
-    order, bodies, fields = extract_rendered(rendered)
+    order, bodies = _heading_sections(rendered)
     counts = {h: order.count(h) for h in order}
     for h in layout["rendered_sections_required"]:
         if counts.get(h, 0) == 0:
@@ -995,31 +784,35 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
     if token in rendered:
         err("rendered_token_unresolved", "{attempt} token survives in the rendered prompt")
 
-    # keyed losslessness: every expected field must be extracted with exactly its value
-    expected = expected_fields(entry, token)
-    metadata_keys = {k for k, s in FIELD_SECTIONS.items() if s == ""}
-    for path, value in expected.items():
-        found = fields.get(path)
-        where = ".".join(path)
-        if path[0] in metadata_keys and len(path) == 1:
-            if found is None:
-                err("rendered_metadata_missing", f"workflow metadata missing {path[0]}: {value}")
-            elif found.value != value:
-                err("rendered_metadata_missing", f"workflow metadata {path[0]} renders {found.value!r}, expected {value!r}")
-            continue
-        if found is None:
-            err("rendered_value_missing", f"{where} is not rendered at its field position (expected {value[:60]!r})")
-        elif found.value != value:
-            err("rendered_value_missing", f"{where} renders {found.value[:60]!r}, expected {value[:60]!r}")
-    for path in fields:
-        if path not in expected and path[0] in FIELD_SECTIONS:
-            err("rendered_value_missing", f"{'.'.join(path)} is rendered but the entry declares no such value")
-    if attempt is None and ("attempt",) in fields:
-        err("rendered_metadata_missing", "attempt line rendered for an entry without an attempt")
-    if entry.get("dispatch_authority") is None and ("dispatch_authority",) in fields:
-        err("rendered_metadata_missing", "dispatch_authority line rendered for an entry without one")
-    # write manifest rows: each row complete on one line; attempt reuse anywhere
-    manifest_lines = [line for _n, line in bodies.get("Write Manifest", [])]
+    # the typed entry: exactly one heading, exactly one fenced yaml block, equal to the resolved entry
+    expected = resolve_entry(entry, token, attempt)
+    typed_count = counts.get("Typed Entry", 0)
+    if typed_count == 1:
+        body = bodies.get("Typed Entry", [])
+        opens = [i for i, line in enumerate(body) if line == TYPED_ENTRY_OPEN]
+        closes = [i for i, line in enumerate(body) if line == TYPED_ENTRY_CLOSE]
+        if not opens or not closes or closes[-1] < opens[0]:
+            err("typed_entry_missing", "the Typed Entry section carries no ```yaml ... ``` block")
+        elif len(opens) != 1 or len(closes) != 1:
+            err("typed_entry_ambiguous", "the Typed Entry section must carry exactly one ```yaml ... ``` block")
+        else:
+            block = "\n".join(body[opens[0] + 1:closes[0]])
+            try:
+                loaded = _load_yaml_text(block)
+            except _StrictLoadError as exc:
+                err("typed_entry_unparseable", f"typed entry block does not parse: {exc}")
+            else:
+                if not isinstance(loaded, dict):
+                    err("typed_entry_unparseable", "typed entry block is not a mapping")
+                else:
+                    diff = _first_diff(expected, loaded)
+                    if diff:
+                        err("typed_entry_mismatch", f"typed entry differs from the resolved sidecar entry at {diff}")
+    elif typed_count == 0:
+        err("typed_entry_missing", "no Typed Entry section")
+    # write manifest rows: each row complete on one line; self-report path line; attempt reuse
+    manifest_lines = bodies.get("Write Manifest", [])
+    self_report_lines = bodies.get("Self-Report", [])
     for w in entry.get("writes", []) if isinstance(entry.get("writes"), list) else []:
         if not isinstance(w, dict):
             continue
@@ -1034,6 +827,9 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
                 if other_attempt != attempt and resolve_attempt(path_value, token, other_attempt) in rendered:
                     err("rendered_attempt_path_reuse", f"a write target resolves to attempt {other_attempt}, not {attempt}")
                     break
+        if w.get("artifact_type") == "self_report" and w.get("role_owner") == "coder":
+            if f"`{resolved}`" not in [line.strip() for line in self_report_lines]:
+                err("rendered_self_report_path_missing", f"Self-Report section does not carry the line `{resolved}`")
     env = entry.get("execution_envelope")
     if isinstance(env, dict) and isinstance(env.get("local_output_root"), str) and attempt:
         for other in range(1, 1000):
@@ -1044,7 +840,7 @@ def check_rendered(doc: dict, slice_id: str, attempt_arg: str | None, rendered: 
     return d
 
 
-# --- review report closure record -------------------------------------------
+# --- review report closure record (section-local, line-based) --------------
 
 
 def check_review_report(text: str, rel: str, layout: dict) -> list[Diagnostic]:
@@ -1053,46 +849,37 @@ def check_review_report(text: str, rel: str, layout: dict) -> list[Diagnostic]:
     def err(code: str, msg: str) -> None:
         d.append(Diagnostic(code, rel, "", msg))
 
-    order, bodies = _sections(text)
+    order, bodies = _heading_sections(text)
     closure_n = order.count("Closure Decision")
     verdict_n = order.count("Verdict")
     if closure_n == 0:
-        err("closure_section_missing", "no '## Closure Decision' section")
+        err("closure_section_missing", "no line-start '## Closure Decision' heading")
     elif closure_n > 1:
-        err("closure_section_duplicate", "more than one '## Closure Decision' section")
+        err("closure_section_duplicate", "more than one line-start '## Closure Decision' heading (a fenced example carrying it counts)")
     if verdict_n == 0:
-        err("verdict_section_missing", "no '## Verdict' section")
+        err("verdict_section_missing", "no line-start '## Verdict' heading")
     elif verdict_n > 1:
-        err("verdict_section_duplicate", "more than one '## Verdict' section")
+        err("verdict_section_duplicate", "more than one line-start '## Verdict' heading")
     if closure_n == 1 and verdict_n == 1:
         ci, vi = order.index("Closure Decision"), order.index("Verdict")
         if ci > vi:
             err("closure_after_verdict", "'## Closure Decision' must precede '## Verdict'")
         elif vi != ci + 1:
             err("closure_not_adjacent", "'## Closure Decision' must be the section immediately before '## Verdict'")
-    status_lines = sum(1 for line, fenced in fenced_lines(text) if not fenced and line.startswith("Objective status:"))
-    evidence_lines = sum(1 for line, fenced in fenced_lines(text) if not fenced and line.startswith("Objective evidence:"))
-    if status_lines > 1:
-        err("objective_status_duplicate", f"exactly one 'Objective status:' line is allowed in the report (found {status_lines})")
-    if evidence_lines > 1:
-        err("objective_evidence_duplicate", f"exactly one 'Objective evidence:' line is allowed in the report (found {evidence_lines})")
-    if closure_n == 1:
-        lines = [l for _n, l in bodies.get("Closure Decision", []) if l.strip()]
+        lines = [l for l in bodies.get("Closure Decision", []) if l.strip()]
         if len(lines) != 2:
             err("closure_line_count", f"the closure section must hold exactly two non-empty lines (found {len(lines)})")
         status_here = [l for l in lines if l.startswith("Objective status:")]
-        if len(status_here) != 1:
-            err("objective_status_line_missing", "exactly one 'Objective status:' line is required in the closure section")
+        if len(status_here) != 1 or (lines and lines[0] != status_here[0] if status_here else False):
+            err("objective_status_line_missing", "the closure section's first line must be its single 'Objective status:' line")
         else:
             value = status_here[0].split(":", 1)[1].strip()
             if value not in layout["objective_status_values"]:
                 err("objective_status_invalid", f"unknown objective status {value!r}")
-            idx = lines.index(status_here[0])
-            nxt = lines[idx + 1] if idx + 1 < len(lines) else ""
-            if idx != 0 or not nxt.startswith("Objective evidence:") or not nxt.split(":", 1)[1].strip():
-                err("objective_evidence_line_missing", "the status line must be first and an 'Objective evidence:' line must immediately follow it")
-    if verdict_n == 1:
-        vlines = [l for _n, l in bodies.get("Verdict", []) if l.strip()]
+            nxt = lines[1] if len(lines) > 1 else ""
+            if not nxt.startswith("Objective evidence:") or not nxt.split(":", 1)[1].strip():
+                err("objective_evidence_line_missing", "an 'Objective evidence:' line must immediately follow the status line")
+        vlines = [l for l in bodies.get("Verdict", []) if l.strip()]
         if not vlines or not VERDICT_FOOTER_RE.match(vlines[0]):
             err("verdict_footer_invalid", "first non-empty line under '## Verdict' must be 'Verdict: <value> - next: <one move>'")
         if any(l.startswith("Objective status:") for l in vlines):

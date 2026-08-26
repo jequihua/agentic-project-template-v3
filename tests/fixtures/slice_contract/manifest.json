@@ -61,7 +61,7 @@
       "id": "all_fields_rendered_m001_s01",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/all_fields_rendered_m001_s01.md",
-      "sha256": "469b8f290d175dec19af6d9f9342fbd6704d00996fb6c286b5fd74f160af081c",
+      "sha256": "bb5dfe71c886174930193d105e26d6e80cd4056b947b9bf37924a35d3793e955",
       "tags": [
         "positive",
         "render"
@@ -81,7 +81,7 @@
       "id": "all_fields_rendered_m002_s02_attempt_001",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/all_fields_rendered_m002_s02_attempt_001.md",
-      "sha256": "3c0ce01e143880e123091eefd06162fed440cf3b3f9a1a7baad43f418f718af8",
+      "sha256": "f3bebac577468fde39a7e63836513d2408f090134bb3330e78da240937e995a1",
       "tags": [
         "positive",
         "render",
@@ -102,7 +102,7 @@
       "id": "all_fields_rendered_m002_s02_attempt_002",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/all_fields_rendered_m002_s02_attempt_002.md",
-      "sha256": "c10b7d6685b8ea144d8de9d88d5a26b8ba4d3dc7cf5abd37c4f41ac59d15e27a",
+      "sha256": "415732ae02c77fa20620634def65cd38238720da54282118f37ce266e5bf0cca",
       "tags": [
         "positive",
         "render",
@@ -684,7 +684,7 @@
       "id": "frozen_entry_rendered_m001_s01",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/frozen_entry_rendered_m001_s01.md",
-      "sha256": "b1aa2e65e9e5771ee2eacc5cb78aa388d663995f296d8d253c895453407d02be",
+      "sha256": "6414824e4c7063e0b04a2bf301c5e72fbd7592d8b057db9f5534b61ad5bc3bba",
       "tags": [
         "positive",
         "render",
@@ -1243,7 +1243,7 @@
       "id": "rendered_attempt_mismatch",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_attempt_mismatch.md",
-      "sha256": "c10b7d6685b8ea144d8de9d88d5a26b8ba4d3dc7cf5abd37c4f41ac59d15e27a",
+      "sha256": "415732ae02c77fa20620634def65cd38238720da54282118f37ce266e5bf0cca",
       "tags": [
         "adversarial",
         "render",
@@ -1256,19 +1256,20 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M002-S02"
       },
-      "description": "An attempt-002 prompt whose write targets and output root resolve to attempt 001 reuses history.",
+      "description": "An attempt-002 prompt whose paths resolve to attempt 001 everywhere reuses history and no longer equals its entry.",
       "expected": {
         "codes": [
           "rendered_attempt_path_reuse",
           "rendered_manifest_row_missing",
-          "rendered_value_missing"
+          "rendered_self_report_path_missing",
+          "typed_entry_mismatch"
         ],
         "result": "fail"
       },
       "id": "rendered_attempt_path_reuse",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_attempt_path_reuse.md",
-      "sha256": "15c7dcaa10da2e2c56a3f650745564d4f366b142c37ade3a19d926bda53744ab",
+      "sha256": "2584f8612dffb002baf922b48d099a71ad1d329aee694f539153d0a93e6f7cec",
       "tags": [
         "adversarial",
         "render"
@@ -1290,7 +1291,7 @@
       "id": "rendered_deleted_section_residue",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_deleted_section_residue.md",
-      "sha256": "1e3d47e0c3f8c9d3b58a371c78e5c5bd291782828b92e3c0668dcb056efd3b68",
+      "sha256": "88a64dea91bcf0cd78d7bb8b7265cd26c0f2ac43bbbbaa5e75b7c27b114aed1b",
       "tags": [
         "adversarial",
         "render"
@@ -1302,20 +1303,19 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M002-S02"
       },
-      "description": "An envelope field renders a different vocabulary value than the entry.",
+      "description": "A prose envelope value differs while the typed entry is exact; prose is not the carrier.",
       "expected": {
-        "codes": [
-          "rendered_value_missing"
-        ],
-        "result": "fail"
+        "codes": [],
+        "result": "pass"
       },
       "id": "rendered_envelope_value_replaced",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_envelope_value_replaced.md",
-      "sha256": "1fad6cd011a602cc4ae88368ef39f8a383f0c8a364061723a8fba62ecf52a86c",
+      "sha256": "e8e1122ee9b2605684b209657f6aebaed2922700062fee94d5873ca93ffce77a",
       "tags": [
-        "adversarial",
-        "render"
+        "positive",
+        "render",
+        "prose-not-authority"
       ]
     },
     {
@@ -1323,20 +1323,19 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A list section carries an item the entry does not declare.",
+      "description": "A prose list carries an extra item while the typed entry is exact; prose is not the carrier.",
       "expected": {
-        "codes": [
-          "rendered_value_missing"
-        ],
-        "result": "fail"
+        "codes": [],
+        "result": "pass"
       },
       "id": "rendered_extra_list_item",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_extra_list_item.md",
-      "sha256": "059844c968d748e0853ca3ef9f8bfa00c7bc01f80ad5b8a613bfddf1c8f80ec1",
+      "sha256": "3c6a261b6b3358b18bb10fa4bbbb7ae90fad3db31fd6f6c48e8b3c10df6f5e54",
       "tags": [
-        "adversarial",
-        "render"
+        "positive",
+        "render",
+        "prose-not-authority"
       ]
     },
     {
@@ -1345,20 +1344,19 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M002-S02"
       },
-      "description": "The reviewer's round-2 probe: the value is replaced while the label's allowed-values hint still contains the word; a substring test would accept it.",
+      "description": "Round-2 probe under the carrier method: a prose value differs while the typed entry is exact. Prose values are not conformance-checked (contract section 8); the typed entry is the carrier, so this renders as a renderer-quality defect, not a contract violation.",
       "expected": {
-        "codes": [
-          "rendered_value_missing"
-        ],
-        "result": "fail"
+        "codes": [],
+        "result": "pass"
       },
       "id": "rendered_field_value_replaced",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_field_value_replaced.md",
-      "sha256": "2ceeb1de1b2ec372e978aa0642255915264121b463481a41bc55ee31c9c60ed9",
+      "sha256": "1c582446da92315643a5450253c912c28341e565a18dad676f0ab6a3319f099d",
       "tags": [
-        "adversarial",
-        "render"
+        "positive",
+        "render",
+        "prose-not-authority"
       ]
     },
     {
@@ -1367,18 +1365,17 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M002-S02"
       },
-      "description": "A single manifest cell differs from the entry.",
+      "description": "A single prose manifest cell differs from the entry; the exact-line row check catches it.",
       "expected": {
         "codes": [
-          "rendered_manifest_row_missing",
-          "rendered_value_missing"
+          "rendered_manifest_row_missing"
         ],
         "result": "fail"
       },
       "id": "rendered_manifest_cell_replaced",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_manifest_cell_replaced.md",
-      "sha256": "3b770832b962de9f173c7bf2cfab813654f4114994c09440956b06f0a81c8d0a",
+      "sha256": "88d5c6439c6c6ac263c570ff08b80ecbfd1d0ec99523b4ec936653d53c971ec6",
       "tags": [
         "adversarial",
         "render"
@@ -1389,39 +1386,17 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A workflow metadata line was lost.",
+      "description": "A write-manifest row was lost in the prose table.",
       "expected": {
         "codes": [
-          "rendered_metadata_missing"
-        ],
-        "result": "fail"
-      },
-      "id": "rendered_metadata_missing",
-      "mode": "render",
-      "path": "tests/fixtures/slice_contract/rendered_metadata_missing.md",
-      "sha256": "33ae6f372be5db1f7a9b94fe9fbd75b678cce6660df3517ea8af95f9cc971a3d",
-      "tags": [
-        "adversarial",
-        "render"
-      ]
-    },
-    {
-      "args": {
-        "sidecar": "all_fields.slices.yaml",
-        "slice": "M001-S01"
-      },
-      "description": "A write-manifest row was lost in rendering.",
-      "expected": {
-        "codes": [
-          "rendered_manifest_row_missing",
-          "rendered_value_missing"
+          "rendered_manifest_row_missing"
         ],
         "result": "fail"
       },
       "id": "rendered_missing_manifest_row",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_missing_manifest_row.md",
-      "sha256": "e319b9a860f8eb25d3c6af803ed036877719ba77cef7fbdfcefd795859b2384d",
+      "sha256": "955c02d177bd0a39fc167c98788df4eab228ed7cd22fee29e503a268867fb5bf",
       "tags": [
         "adversarial",
         "render"
@@ -1432,18 +1407,17 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A section appears twice; the keyed parse then sees the placeholder item where the entry values belong.",
+      "description": "A section appears twice.",
       "expected": {
         "codes": [
-          "rendered_section_duplicate",
-          "rendered_value_missing"
+          "rendered_section_duplicate"
         ],
         "result": "fail"
       },
       "id": "rendered_section_duplicate",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_section_duplicate.md",
-      "sha256": "d54f9caa0e61f953924598a1c5999f81134b6b0dc380f3c25e6cd5aec7ecb739",
+      "sha256": "6cae028650f4a1b81e88e2c6f3fb36f82e34f24cdfb0a5c9244cb3c2362f2bc4",
       "tags": [
         "adversarial",
         "render"
@@ -1457,15 +1431,14 @@
       "description": "A required section heading is missing.",
       "expected": {
         "codes": [
-          "rendered_section_missing",
-          "rendered_value_missing"
+          "rendered_section_missing"
         ],
         "result": "fail"
       },
       "id": "rendered_section_missing",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_section_missing.md",
-      "sha256": "a155eec269abfb09886b63eebb48b86a4be37cd112ca96fa430744b52f2cc364",
+      "sha256": "bc2d46704a6b4db664c677401ab3cc26a8476651ff6cb226601e26f2dc0956e4",
       "tags": [
         "adversarial",
         "render"
@@ -1476,18 +1449,38 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A slot token survived rendering, so the task body no longer equals the entry.",
+      "description": "The Self-Report section names a different path than the manifest's self-report row.",
       "expected": {
         "codes": [
-          "rendered_sentinel_residue",
-          "rendered_value_missing"
+          "rendered_self_report_path_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_self_report_path_missing",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_self_report_path_missing.md",
+      "sha256": "f1e38f3d27cf7dc6e5c2ceb637541635278ea5995c7a037640a0378565e27f20",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A slot token survived rendering in the prose.",
+      "expected": {
+        "codes": [
+          "rendered_sentinel_residue"
         ],
         "result": "fail"
       },
       "id": "rendered_sentinel_residue",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_sentinel_residue.md",
-      "sha256": "65f60507c1475867b5306baa65daf1ccfad61e3cfe03205d9255b41b17915a95",
+      "sha256": "4c361f38455bba7bcb63246d4a7443cd33dab15c52b3aec9bc9d00ecb7269f50",
       "tags": [
         "adversarial",
         "render"
@@ -1499,19 +1492,19 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M002-S02"
       },
-      "description": "The attempt token survived into the rendered prompt.",
+      "description": "The attempt token survived into the rendered prompt and its typed entry.",
       "expected": {
         "codes": [
           "rendered_manifest_row_missing",
           "rendered_token_unresolved",
-          "rendered_value_missing"
+          "typed_entry_mismatch"
         ],
         "result": "fail"
       },
       "id": "rendered_token_unresolved",
       "mode": "render",
       "path": "tests/fixtures/slice_contract/rendered_token_unresolved.md",
-      "sha256": "306c7861169d80b1ec418fecf7b887260a0c7b2b16f45946b6a6794f1e58537e",
+      "sha256": "37436829817dd55f320a84529373683ef772b6c1840872ae6829c629b6f031d5",
       "tags": [
         "adversarial",
         "render"
@@ -1522,17 +1515,144 @@
         "sidecar": "all_fields.slices.yaml",
         "slice": "M001-S01"
       },
-      "description": "A non-goal was lost in rendering.",
+      "description": "The Typed Entry section is absent.",
       "expected": {
         "codes": [
-          "rendered_value_missing"
+          "rendered_section_missing",
+          "typed_entry_missing"
         ],
         "result": "fail"
       },
-      "id": "rendered_value_missing",
+      "id": "rendered_typed_entry_absent",
       "mode": "render",
-      "path": "tests/fixtures/slice_contract/rendered_value_missing.md",
-      "sha256": "1e9b7a750a161c3029cbc5de2540f24b63cf4613ca96c3f8c8421cfef81f1934",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_absent.md",
+      "sha256": "469b8f290d175dec19af6d9f9342fbd6704d00996fb6c286b5fd74f160af081c",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A value inside the typed entry differs from the sidecar entry; the prose still says Level 3.",
+      "expected": {
+        "codes": [
+          "typed_entry_mismatch"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_typed_entry_altered",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_altered.md",
+      "sha256": "fa37ae1a6861f2a822d1d2e9866712d575330226a3d37ae88d4effb1ede44588",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "The section exists but carries no fenced yaml block.",
+      "expected": {
+        "codes": [
+          "typed_entry_missing"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_typed_entry_block_missing",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_block_missing.md",
+      "sha256": "3051522ae168f1dab17930f4718967fa1f6a5f69535945970f4f0aa4f2724d92",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "Two fenced yaml blocks in the Typed Entry section are ambiguous.",
+      "expected": {
+        "codes": [
+          "typed_entry_ambiguous"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_typed_entry_duplicate",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_duplicate.md",
+      "sha256": "70e953cd9e451b7cde1ef3caf3ad6671eaae74979e98ca33234271876498eecd",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "A leaf was dropped from the typed entry while the prose still lists it.",
+      "expected": {
+        "codes": [
+          "typed_entry_mismatch"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_typed_entry_leaf_missing",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_leaf_missing.md",
+      "sha256": "6cd65506516e165726f67ff2d2e016104f9b3d6f0b9f1d576582c45d2176115a",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "The typed entry carries a key the sidecar entry does not declare.",
+      "expected": {
+        "codes": [
+          "typed_entry_mismatch"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_typed_entry_undeclared_leaf",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_undeclared_leaf.md",
+      "sha256": "c3acb689baf4243a5fe43875a81e2cb2f09618d8226e86051c9720d52129622c",
+      "tags": [
+        "adversarial",
+        "render"
+      ]
+    },
+    {
+      "args": {
+        "sidecar": "all_fields.slices.yaml",
+        "slice": "M001-S01"
+      },
+      "description": "The typed entry block does not parse as strict YAML.",
+      "expected": {
+        "codes": [
+          "typed_entry_unparseable"
+        ],
+        "result": "fail"
+      },
+      "id": "rendered_typed_entry_unparseable",
+      "mode": "render",
+      "path": "tests/fixtures/slice_contract/rendered_typed_entry_unparseable.md",
+      "sha256": "81bb66b1537b68e0440d4f74ce4ebffe771cba9557a1d37aa231dc53ddeec9dc",
       "tags": [
         "adversarial",
         "render"
@@ -1639,12 +1759,10 @@
     },
     {
       "args": {},
-      "description": "Two closure sections are ambiguous.",
+      "description": "Two closure headings are ambiguous.",
       "expected": {
         "codes": [
-          "closure_section_duplicate",
-          "objective_evidence_duplicate",
-          "objective_status_duplicate"
+          "closure_section_duplicate"
         ],
         "result": "fail"
       },
@@ -1748,17 +1866,49 @@
     },
     {
       "args": {},
-      "description": "A second objective-evidence line anywhere in the report is ambiguous.",
+      "description": "An objective-evidence line outside the closure section is not authority and is not counted.",
       "expected": {
-        "codes": [
-          "objective_evidence_duplicate"
-        ],
-        "result": "fail"
+        "codes": [],
+        "result": "pass"
       },
       "id": "review_report_evidence_duplicate",
       "mode": "review",
       "path": "tests/fixtures/slice_contract/review_report_evidence_duplicate.md",
       "sha256": "cf01a0b9d71952b67185aee654444dcbdbbe1d8bd34e1ee1440ae97804142d9f",
+      "tags": [
+        "review",
+        "positive"
+      ]
+    },
+    {
+      "args": {},
+      "description": "The round-3 probe: an invalid backtick-info opener, duplicate status/evidence lines, then a real fence. Under the section-local rule those lines are not authority and the record is read from the closure section alone.",
+      "expected": {
+        "codes": [],
+        "result": "pass"
+      },
+      "id": "review_report_fake_opener_duplicates_valid",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_fake_opener_duplicates_valid.md",
+      "sha256": "e9b056076d14c0c9b20945aedad0861e9c0268be28725b83f92fd44d8dc822df",
+      "tags": [
+        "review",
+        "positive"
+      ]
+    },
+    {
+      "args": {},
+      "description": "Heading lines are counted line-start regardless of fences: never quote the closure or verdict heading line inside an example (contract section 9).",
+      "expected": {
+        "codes": [
+          "closure_section_duplicate"
+        ],
+        "result": "fail"
+      },
+      "id": "review_report_heading_in_example_invalid",
+      "mode": "review",
+      "path": "tests/fixtures/slice_contract/review_report_heading_in_example_invalid.md",
+      "sha256": "6180c158c303ad29e5c7d7ad64c4fa249b6504662d2d9d9afc62a67de22bd56a",
       "tags": [
         "review",
         "adversarial"
@@ -1798,12 +1948,10 @@
     },
     {
       "args": {},
-      "description": "A second objective-status line anywhere in the report is ambiguous.",
+      "description": "An objective-status line outside the closure section is not authority and is not counted (section-local rule).",
       "expected": {
-        "codes": [
-          "objective_status_duplicate"
-        ],
-        "result": "fail"
+        "codes": [],
+        "result": "pass"
       },
       "id": "review_report_status_duplicate",
       "mode": "review",
@@ -1811,7 +1959,7 @@
       "sha256": "96a1c189bfd91685fde8469891e5b374e1be34e309798f5c44402c361c328d5c",
       "tags": [
         "review",
-        "adversarial"
+        "positive"
       ]
     },
     {
@@ -1819,7 +1967,6 @@
       "description": "An objective line inside the verdict section is invalid.",
       "expected": {
         "codes": [
-          "objective_status_duplicate",
           "objective_status_in_verdict"
         ],
         "result": "fail"
@@ -2368,7 +2515,7 @@
   ],
   "layout": "frutlups.layout.yaml",
   "manifest_schema": "slice_contract_fixture_manifest",
-  "manifest_version": "2",
+  "manifest_version": "3",
   "modes": {
     "align": "--sidecar <a> --sidecar <b>",
     "document": "not run through the checker",

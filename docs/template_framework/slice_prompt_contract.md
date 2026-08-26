@@ -187,7 +187,11 @@ copies the entry's `status`, `authored_by`, and `dispatch_authority` into the
 prompt's workflow metadata; a prompt is dispatchable only at workflow
 `status: ready`, and a ready prompt contains no unresolved sentinel and no
 deleted-section residue (`scripts/artifact_integrity_preflight.py` errors on
-both). `artifact_exists` alone never gates a consumption of bytes that
+both). Every `status: <word>` line in a prompt (the workflow metadata and
+the typed entry of section 8 both carry one) holds the same value; the
+preflight reads them by a total line rule with no fence parsing, and a
+disagreement is `status_ambiguous`: the prompt is treated as ready and fails
+closed. `artifact_exists` alone never gates a consumption of bytes that
 matter; use `artifact_identity` (reference + `sha256`) or
 `pinned_external_release` (`repository`, `tag`, `commit`).
 
@@ -254,61 +258,49 @@ dispatchable.
 ## 8. Canonical Rendered Form
 
 One scaffold per regime. The legacy scaffold is unchanged. The v1 scaffold
-`prompts/templates/coding_prompt_contract_v1.md` carries typed slots. The
-rendered prompt is a **keyed grammar**: every typed field has one rendered
-position, and losslessness means the value extracted from that position
-equals the entry's value (attempt tokens resolved) — never that the text
-appears somewhere. Label text, allowed-value hints, duplicated text, or a
-cross-section occurrence can never stand in for a field's value. The
-reference checker parses the rendering field by field and compares by
-equality; the suite proves that overwriting only a field's value span (labels
-and every other occurrence untouched) is detected for every field of every
-canonical rendering.
+`prompts/templates/coding_prompt_contract_v1.md` carries typed slots and ends
+with a `## Typed Entry` section whose single fenced `yaml` block is the
+**machine carrier**: the sidecar entry for the slice, every `{attempt}` token
+resolved in every string leaf, emitted from the renderer's typed model.
+Losslessness is equality, not parsing. The reference checker strict-loads
+that block (duplicate keys refused, size bounded) and compares the loaded
+mapping with the attempt-resolved entry; a missing, altered, or undeclared
+leaf is `typed_entry_mismatch`, an absent block `typed_entry_missing`, a
+second block in the section `typed_entry_ambiguous`, an unloadable block
+`typed_entry_unparseable`. Any YAML serialization that loads to the same
+mapping conforms (key order and quoting are free). The suite deletes and
+alters every leaf of every canonical rendering's block, appends an undeclared
+key, and duplicates the block, and proves refusal each time; it also proves
+that pipe- and newline-bearing scalars round-trip.
 
-The grammar:
+The prose sections are the human rendering of the same entry. The checker
+never extracts a field value from prose; the prose is checked only for what
+a line-based rule states exactly:
 
-- workflow metadata: `key: value` lines in the first fenced block (the
-  `attempt` value may be quoted; `attempt` and `dispatch_authority` lines are
-  absent when the entry has none);
-- exact bullet lists (`- value`, a backticked value stripped of its ticks) for
-  Active Workspaces, Read First, Non-Goals, Definition Of Done, and the two
-  Objective And Closure Proof lists (`Success criteria:` then `Closure proof
-  the review will look for:`); a list carries exactly the entry's items in
-  order — an extra or missing item is a defect;
-- Verification: the entry's values are the leading bullets, before the
-  scaffold's static verification bullets;
-- Task: the section body equals the entry's task text;
-- tables: Write Manifest rows `| path | artifact_type | role_owner |
-  retry_policy |` (resolved path), External Repositories rows `| repository |
-  role | path | identity |`, Correction Scope Map finding rows `| id |
-  violated_invariant | prior_disposition | authority_action | coder_obligation
-  | closure_proof |`, each in entry order;
-- Opening Gates bullets `- kind: reference`, then ` (sha256 H)` for
-  `artifact_identity`, then ` (repository R, tag T, commit C)` for
-  `pinned_external_release`;
-- labeled bullets (`- Label: value`) for Candidate Identity (`Identity
-  strategy (file / manifest / git)`, `Identity value recorded at freeze`) and
-  the Execution Envelope (`Timing probe: `command` (expected N s)`,
-  `Agent/model budget: N s`, `Scientific subprocess budget: N s`,
-  `Expected wall: N s; hard wall: M s`, `Frozen override: none` or
-  `authority `path``, `Retained bytes max: N`, `Local output root: `path``,
-  `Cleanup`, `Negative result handling`, `Stopped result handling`) and the
-  correction bullets (`Controlling ruling: `path`` or `disputed; see `path``);
-- list-valued labeled fields (`Prior evidence identities` as `` `path` sha256
-  H``, `Required closure proof`, `Claims withdrawn or narrowed`, `Evidence
-  invalidated`, `Minimum rerun set`, `Candidate paths`, `Environment bindings
-  (name and value hash only; values live in the runner's policy)` as `NAME
-  sha256 H`, `Identities (arm / group / order / attempt)`) render `none`
-  inline or one nested `  - item` line per value;
-- the Self-Report path is the section's backticked path line;
-- no slot token, sentinel, or conditional-marker residue survives; a
-  not-applicable group has no section.
+- section presence, order, and uniqueness per the layout
+  (`rendered_sections_required`, `rendered_sections_conditional`), headings
+  counted at line start; a not-applicable group has no section and no
+  `*Conditional:*` residue;
+- no slot token, sentinel, or unresolved `{attempt}` token survives;
+- the Write Manifest table carries one exact row
+  `| path | artifact_type | role_owner | retry_policy |` per manifest entry
+  (resolved path), in any order;
+- the Self-Report section carries the manifest's self-report path as a
+  backticked line;
+- an attempt-bearing entry's resolved paths do not appear with another
+  attempt number (history reuse);
+- `--attempt`, when given, equals the entry's own attempt.
 
-| Typed field | Rendered location |
+A prose value that disagrees with an exact typed entry is a renderer-quality
+defect, not a contract violation: such fixtures are tagged
+`prose-not-authority` and render `pass`. A consumer that needs a field reads
+the typed entry; no machine consumer takes the prose as authority.
+
+| Typed field | Human rendering (not authority) |
 | --- | --- |
 | `milestone`, `slice`, `title`, `authored_by`, `mode`, `strictness`, `live`, `corrective`, `attempt`, `status`, `dispatch_authority` | workflow metadata block (the `attempt` and `dispatch_authority` lines are removed when the entry has none) |
 | `task`, `active_workspaces`, `read_first` | Task, Active Workspaces, Read First |
-| `writes` | Write Manifest table (resolved paths) and the Self-Report path |
+| `writes` | Write Manifest table (resolved paths; exact rows are checked) and the Self-Report path (checked) |
 | `opening_gates` | Opening Gates (conditional) |
 | `external_inputs` | External Repositories (conditional) |
 | `correction` | Correction Scope Map (conditional) |
@@ -317,15 +309,17 @@ The grammar:
 | `objective` | Objective And Closure Proof |
 | `non_goals`, `verification`, `definition_of_done` | Non-Goals, Verification, Definition Of Done |
 | seat conduct | Seat Conduct (static pointer to `CLAUDE.md`) |
+| the whole entry, attempt-resolved | Typed Entry (the carrier; equality is the proof) |
 
 Section order and the required/conditional split are declared in the layout
-(`rendered_sections_required`, `rendered_sections_conditional`). The
-canonical renderings are `all_fields_rendered_m001_s01.md` (routine),
-`frozen_entry_rendered_m001_s01.md` (frozen: no dispatch-authority line),
-`all_fields_rendered_m002_s02_attempt_002.md` (live corrective, from
-`all_fields.slices.yaml`) and `all_fields_rendered_m002_s02_attempt_001.md`
-(from its attempt-001 twin). Downstream conformance means reproducing them
-field-for-field from their sidecars.
+(`rendered_sections_required`, `rendered_sections_conditional`; `Typed Entry`
+is required and last). The canonical renderings are
+`all_fields_rendered_m001_s01.md` (routine), `frozen_entry_rendered_m001_s01.md`
+(frozen: no dispatch-authority line), `all_fields_rendered_m002_s02_attempt_002.md`
+(live corrective, from `all_fields.slices.yaml`) and
+`all_fields_rendered_m002_s02_attempt_001.md` (from its attempt-001 twin).
+Downstream conformance means: the typed entry block equals the entry, and the
+prose satisfies the line-based rules above.
 
 ## 9. Review Side: The Closure Record
 
@@ -343,12 +337,17 @@ Objective evidence: <one line citing the slice closure-proof artifacts, or the e
 Verdict: <pass|needs_work|blocked|override> - next: <one move>
 ```
 
-Exact shape: the closure section holds exactly two non-empty lines, the
-status line first and the evidence line immediately after; the report holds
-exactly one non-fenced `Objective status:` line and one `Objective evidence:`
-line in total; no objective line appears inside `## Verdict`; the verdict
-footer is unchanged as the first non-empty line under `## Verdict`; no
-section stands between the two. Values: `achieved` (cited closure evidence
+Exact shape, read by section-local, line-based rules with no fence parsing:
+the report holds exactly one line starting with `## Closure Decision` and
+exactly one starting with `## Verdict`, counted wherever they stand (fenced
+or not), so an example never quotes either heading line
+(`closure_section_duplicate`, `verdict_section_duplicate`); the closure
+section is the two non-empty lines between the two headings, the status line
+first and the evidence line immediately after; `Objective status:` and
+`Objective evidence:` lines anywhere else are not authority and are not
+counted; no objective line appears inside `## Verdict`; the verdict footer
+is unchanged as the first non-empty line under `## Verdict`; no section
+stands between the two. Values: `achieved` (cited closure evidence
 establishes every applicable criterion), `not_achieved` (evidence
 establishes at least one criterion was not met), `not_applicable` (no
 applicable objective dimension, with an explicit reason), `indeterminate`
@@ -379,12 +378,11 @@ tuple equals this list, proven by test):
 `write_path_empty`, `write_path_directory`, `write_path_glob`,
 `write_path_absolute`, `write_path_escape`, `write_path_not_file`,
 `artifact_type_invalid`, `role_owner_invalid`, `retry_policy_invalid`,
-`role_type_incompatible`, `reserved_artifact_mislabeled`,
-`self_report_count`, `attempt_token_missing`, `attempt_token_unexpected`,
-`attempt_token_multiple`, `write_read_conflict`, `sentinel_residue`,
-`gate_kind_invalid`, `gate_reference_missing`, `gate_reference_invalid`,
-`gate_identity_missing`, `external_input_invalid`,
-`candidate_identity_invalid`, `correction_missing`,
+`role_type_incompatible`, `reserved_artifact_mislabeled`, `self_report_count`,
+`attempt_token_missing`, `attempt_token_unexpected`, `attempt_token_multiple`,
+`write_read_conflict`, `sentinel_residue`, `gate_kind_invalid`,
+`gate_reference_missing`, `gate_reference_invalid`, `gate_identity_missing`,
+`external_input_invalid`, `candidate_identity_invalid`, `correction_missing`,
 `correction_field_missing`, `correction_findings_missing`,
 `correction_prior_evidence_invalid`, `correction_ruling_missing`,
 `correction_closure_proof_missing`, `correction_list_invalid`,
@@ -398,21 +396,19 @@ tuple equals this list, proven by test):
 `attempt_mismatch`, `rendered_section_missing`, `rendered_section_duplicate`,
 `rendered_section_unexpected`, `rendered_sentinel_residue`,
 `rendered_section_residue`, `rendered_token_unresolved`,
-`rendered_metadata_missing`, `rendered_manifest_row_missing`,
-`rendered_attempt_path_reuse`, `rendered_value_missing`,
-`closure_section_missing`, `closure_section_duplicate`,
-`closure_after_verdict`, `closure_not_adjacent`, `closure_line_count`,
-`objective_status_line_missing`, `objective_status_invalid`,
-`objective_status_duplicate`, `objective_evidence_line_missing`,
-`objective_evidence_duplicate`, `verdict_section_missing`,
-`verdict_section_duplicate`, `verdict_footer_invalid`,
-`objective_status_in_verdict`.
+`rendered_manifest_row_missing`, `rendered_self_report_path_missing`,
+`rendered_attempt_path_reuse`, `typed_entry_missing`, `typed_entry_ambiguous`,
+`typed_entry_unparseable`, `typed_entry_mismatch`, `closure_section_missing`,
+`closure_section_duplicate`, `closure_after_verdict`, `closure_not_adjacent`,
+`closure_line_count`, `objective_status_line_missing`,
+`objective_status_invalid`, `objective_evidence_line_missing`,
+`verdict_section_missing`, `verdict_section_duplicate`,
+`verdict_footer_invalid`, `objective_status_in_verdict`.
 
 Environment codes (I/O and usage; unit-tested, not fixture-driven; the
-checker's `ENVIRONMENT_CODES`): `layout_unreadable`,
-`layout_contract_block_missing`, `layout_contract_block_incomplete`,
-`sidecar_unreadable`, `rendered_unreadable`, `review_report_unreadable`,
-`slice_not_found`, `usage`.
+checker's `ENVIRONMENT_CODES`): `layout_unreadable`, `layout_contract_block_missing`,
+`layout_contract_block_incomplete`, `sidecar_unreadable`,
+`rendered_unreadable`, `review_report_unreadable`, `slice_not_found`, `usage`.
 
 Sentinels (layout `sentinels`): `TBD`, `<value>`, `<path>`, `<one move>`; a
 scalar that is only `...` counts as unresolved.
@@ -425,13 +421,16 @@ order, `--json` output (`template.slice_contract_check.v1`). It is never
 dispatch authority. Modes: validate one sidecar (including the roadmap link);
 validate two and prove alignment; prove a rendered prompt against its entry
 (`--slice`, optional `--attempt` confirming the entry's own attempt); check a
-review report's closure record. It needs the declared PyYAML dependency
-(`ENVIRONMENT.md`).
+review report's closure record. It parses YAML and reads Markdown only by
+line-start rules: it holds no Markdown grammar and no fence reader. It
+needs the declared PyYAML dependency (`ENVIRONMENT.md`).
 
 The fixture corpus `tests/fixtures/slice_contract/` is inventoried and
 digest-pinned by `manifest.json` (every fixture carries its SHA-256; the
 suite fails when bytes drift). Every content reason code has at least one
-fixture expecting it. Downstream parsers are tested against these fixtures,
+fixture expecting it; fixtures tagged `prose-not-authority` are positive
+renderings whose prose disagrees with an exact typed entry and pin the
+boundary of the contract. Downstream parsers are tested against these fixtures,
 not against private reimplementations; the release receipt carries their
 digests. Fixture corpora are exempt from the artifact-integrity preflight by
 policy (they intentionally carry sentinels, fictional paths, and residue) and
@@ -449,8 +448,12 @@ are scanned by their own tests instead (`docs/template_framework/template_tests.
   exclusion source, and the template's pre-launch check reads it with the
   drive's own grammar — the declared reference is validated unmodified before
   any filesystem access, a declared-but-missing or linked file refuses, and
-  only an omitted `--exclusions` flag means none declared — so it refuses
-  anything the drive would refuse; the command is the layout's
+  only an omitted `--exclusions` flag means none declared. It applies the
+  drive's published rules (bounded read of the limit plus one byte, strict
+  JSON, canonical paths, governed surfaces) and the suite proves parity case
+  by case against the drive's own loader when `FRUTLUPS_DRIVE_SRC` names a
+  drive checkout; admission itself remains the drive's decision. The
+  command is the layout's
   `local_state.prelaunch_size_check`
   (`docs/template_framework/security_and_local_state.md`):
 

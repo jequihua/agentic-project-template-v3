@@ -37,7 +37,6 @@ VOLATILE_RES = (
 READY_SENTINELS = ("TBD", "<value>", "<path>", "<one move>")
 READY_RESIDUE_PHRASES = ("delete this section", "conditional: rendered only", "fills or deletes")
 WORKFLOW_STATUS_RE = re.compile(r"^status:\s*([A-Za-z_-]+)\s*$")
-WORKFLOW_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 HISTORICAL_WORDS = (
     "historical",
     "nonexistent",
@@ -252,21 +251,21 @@ def _profile_summary(records: list[dict]) -> dict:
     return {layer: dict(sorted(counts.items())) for layer, counts in layers.items()}
 
 
-def _workflow_status(lines: list[str]) -> str:
-    """Status declared in the first fenced workflow-metadata block, if any."""
-    open_char, open_len = "", 0
+def _workflow_status(lines: list[str]) -> tuple[str, bool]:
+    """(status, ambiguous): the workflow status declared by `status: <word>` lines
+    anywhere in the artifact. Every such line must agree; a disagreement is
+    ambiguous and the caller fails closed (ready rules apply). No fence parsing:
+    the rule is total over the file."""
+    values: list[str] = []
     for line in lines:
-        fence = WORKFLOW_FENCE_RE.match(line)
-        if not open_char:
-            if fence:
-                open_char, open_len = fence.group(1)[0], len(fence.group(1))
-            continue
-        if fence and fence.group(1)[0] == open_char and len(fence.group(1)) >= open_len and not fence.group(2).strip():
-            return ""
         match = WORKFLOW_STATUS_RE.match(line.strip())
         if match:
-            return match.group(1)
-    return ""
+            values.append(match.group(1))
+    if not values:
+        return "", False
+    if len(set(values)) > 1:
+        return "ready", True
+    return values[0], False
 
 
 def check_artifact(
@@ -290,7 +289,13 @@ def check_artifact(
     fields, frontmatter_error = _frontmatter(text)
     if require_frontmatter and frontmatter_error:
         findings.append(Finding("error", "frontmatter", rel, 1, "", frontmatter_error))
-    status = (fields or {}).get("status", "") or _workflow_status(lines)
+    workflow_status, ambiguous = _workflow_status(lines)
+    status = (fields or {}).get("status", "") or workflow_status
+    if ambiguous:
+        findings.append(
+            Finding("error", "status_ambiguous", rel, 1, "status:",
+                    "status lines disagree; the artifact is treated as ready and fails closed")
+        )
     if status.lower() == "ready":
         for sentinel in READY_SENTINELS:
             if sentinel in text:
